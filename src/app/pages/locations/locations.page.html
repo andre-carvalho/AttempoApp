@@ -1,0 +1,71 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons end>
+      <button ion-button (click)="sendDataToServer()">
+        <ion-icon name="cloud-upload"></ion-icon>
+      </button>
+      <button ion-button (click)="setServerURL()">
+        <ion-icon name="options"></ion-icon>
+      </button>
+    </ion-buttons>
+    <ion-title>Lista de lugares</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-list *ngIf="model">
+    <ion-card>
+
+      <ion-item>
+
+        <ion-thumbnail item-start>
+          <img [src]="prepareHeader(model.photo)" *ngIf="model && model.photo">
+        </ion-thumbnail>
+        
+        <button ion-button block icon-right color="default" (click)="takePicture()" *ngIf="model && !model.photo">
+          Capturar uma foto
+          <ion-icon name="camera"></ion-icon>
+        </button>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label floating>Descrição</ion-label>
+        <ion-input type="text" name="description" [(ngModel)]="model.description"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <p>Lat/Long( <span [innerHTML]="model.lat"></span>, <span [innerHTML]="model.lng"></span> )</p>
+
+        <button ion-button icon-left clear item-end (click)="save()">
+          <ion-icon name="done-all"></ion-icon> Salvar
+        </button>
+      </ion-item>
+      
+    </ion-card>
+  </ion-list>
+
+  <ion-list>
+    <ion-card *ngFor="let item of locations">
+      <ion-item>
+        <ion-thumbnail item-start>
+          <img [src]="prepareHeader(item.location.photo)" *ngIf="item.location.photo">
+        </ion-thumbnail>
+        <p>Criação: {{ item.location.timeref | date:'dd/MM/yyyy' }}</p>
+
+        <p>Descrição: {{ item.location.description }}</p>
+      </ion-item>
+      <ion-item>
+        <p>Lat/Long( {{ item.location.lat }} , {{ item.location.lng }} )</p>
+
+        <button ion-button icon-left clear item-end (click)="removeLocation(item)">
+          <ion-icon name="trash"></ion-icon>
+        </button>
+        <button ion-button icon-left clear item-end (click)="sendDataToServer(item)" *ngIf="!item.location.send">
+          <ion-icon name="cloud-upload"></ion-icon>
+        </button>
+      </ion-item>
+      
+    </ion-card>
+  </ion-list>
+
+</ion-content>

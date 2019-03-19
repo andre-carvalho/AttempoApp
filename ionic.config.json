@@ -1,0 +1,7 @@
+{
+  "name": "AttempoApp",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular"
+}
