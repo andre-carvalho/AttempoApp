@@ -1,49 +1,47 @@
 
-page-home {
+.ios, .md {
+    app-home {
 
-    ion-content {
-        background-color: mintcream;
-        width:100%;
-    }
+        --background: mintcream;
 
-    .item-md {
-        background-color: transparent;
-        color: #3c3c3b;
-        font-weight: bolder;
-    }
+        ion-content {
+            width:100%;
+            --background: mintcream;
+        }
 
-    .text1, .text2, .text3, .text4 {
-        text-align:center;
-        color: #3c3c3b;
-        font-size: medium;
-    }
-    .text2 {
-        font-size: small;
-        text-decoration: underline;
-    }
+        ion-item {
+            --background: transparent;
+            color: #3c3c3b;
+            font-weight: bolder;
+            border: none;
+        }
 
-    .text4 {
-        font-size: x-large;
-    }
+        .text1, .text2, .text3, .text4 {
+            text-align:center;
+            --color: #3c3c3b;
+            font-size: medium;
+        }
+        .text2 {
+            font-size: small;
+            text-decoration: underline;
+        }
 
-    .space{
-        height: 30%;
-    }
+        .text4 {
+            font-size: large;
+            --color: mintcream;
+        }
 
-    .button-md, .button-md:hover:not(.disable-hover) {
-        background-color: #3c3c3b;
-    }
+        ion-button, ion-button:hover:not(.disable-hover) {
+            --background: #3c3c3b;
+            --color: #e4c98e;
+        }
 
-    [text-wrap] .label-md{
-        color: #69f4f4;
-        font-size: x-large;
-        text-align: center;
-        font-weight: bold;
-    }
-    [text-wrap] ion-label{
-        white-space: nowrap;
-    }
-    [col-6] .item-md.item-block .item-inner{
-        border: none;
+        ion-label{
+            --color: #69f4f4;
+            font-size: x-large;
+            text-align: center;
+            font-weight: bold;
+            white-space: nowrap;
+        }
     }
 }

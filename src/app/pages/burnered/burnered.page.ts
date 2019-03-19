@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { NavController, NavParams, AlertController } from '@ionic/angular';
-import { Router, NavigationExtras } from '@angular/router';
+import { AlertController } from '@ionic/angular';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-burnered',
@@ -9,11 +9,9 @@ import { Router, NavigationExtras } from '@angular/router';
 })
 export class BurneredPage implements OnInit {
 
-  constructor(public navCtrl: NavController,
-    public navParams: NavParams,
+  constructor(
     private alertCtrl: AlertController,
-    private router: Router,
-    private extras: NavigationExtras) {
+    private router: Router) {
   }
 
   ngOnInit() {

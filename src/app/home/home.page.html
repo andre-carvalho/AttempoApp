@@ -9,20 +9,20 @@
   <ion-grid>
     <form [formGroup]="credentialsForm" (ngSubmit)="onSubmit()">
       <ion-row>
-        <ion-col col-1></ion-col>
-        <ion-col col-10>
+        <ion-col size="1"></ion-col>
+        <ion-col size="10">
           <img src="./assets/imgs/logo_mini_dark.png">
         </ion-col>
-        <ion-col col-1></ion-col>
+        <ion-col size="1"></ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-12 class="text1">
+        <ion-col size="12" class="text1">
           Insira seus dados para login
         </ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-2></ion-col>
-        <ion-col col-8>
+        <ion-col size="2"></ion-col>
+        <ion-col size="8">
 
             <ion-item>
               <ion-label position="floating">Email</ion-label>
@@ -35,29 +35,33 @@
             </ion-item>
 
         </ion-col>
-        <ion-col col-2></ion-col>
+        <ion-col size="2"></ion-col>
       </ion-row>
     
       <ion-row>
-        <ion-col col-2></ion-col>
-        <ion-col col-8 class="text2">
+        <ion-col size="2"></ion-col>
+        <ion-col size="8" class="text2">
           <div class="forgotpass">Esqueci minha senha
           </div>
         </ion-col>
-        <ion-col col-2></ion-col>
+        <ion-col size="2"></ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-12 style="text-align:center;">
-          <ion-button expand="full" type="submit" [disabled]="!credentialsForm.valid">
+        <ion-col size="2"></ion-col>
+        <ion-col size="8" style="text-align:center;">
+          <ion-button expand="block" type="submit" [disabled]="!credentialsForm.valid" class="text4">
             Login<ion-icon slot="end" name="person"></ion-icon>
           </ion-button>
         </ion-col>
+        <ion-col size="2"></ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-12>
+        <ion-col size="2"></ion-col>
+        <ion-col size="8">
           <ion-label class="text3">Ainda não é cadastrado?</ion-label>
-          <ion-button expand="full" type="button" (click)="register()" [disabled]="!credentialsForm.valid" class="text4">Cadastre-se agora</ion-button>
+          <ion-button expand="block" type="button" (click)="register()" [disabled]="!credentialsForm.valid" class="text4">Cadastre-se agora</ion-button>
         </ion-col>
+        <ion-col size="2"></ion-col>
       </ion-row>
     </form>
   </ion-grid>
