@@ -1,12 +1,12 @@
 <ion-header>
   <ion-toolbar>
     <ion-buttons end>
-      <button ion-button (click)="sendDataToServer()">
+      <ion-button (click)="sendDataToServer()">
         <ion-icon name="cloud-upload"></ion-icon>
-      </button>
-      <button ion-button (click)="setServerURL()">
+      </ion-button>
+      <ion-button (click)="setServerURL()">
         <ion-icon name="options"></ion-icon>
-      </button>
+      </ion-button>
     </ion-buttons>
     <ion-title>Lista de lugares</ion-title>
   </ion-toolbar>
@@ -22,10 +22,10 @@
           <img [src]="prepareHeader(model.photo)" *ngIf="model && model.photo">
         </ion-thumbnail>
         
-        <button ion-button block icon-right color="default" (click)="takePicture()" *ngIf="model && !model.photo">
+        <ion-button block icon-right color="default" (click)="takePicture()" *ngIf="model && !model.photo">
           Capturar uma foto
           <ion-icon name="camera"></ion-icon>
-        </button>
+        </ion-button>
       </ion-item>
       
       <ion-item>
@@ -36,9 +36,9 @@
       <ion-item>
         <p>Lat/Long( <span [innerHTML]="model.lat"></span>, <span [innerHTML]="model.lng"></span> )</p>
 
-        <button ion-button icon-left clear item-end (click)="save()">
+        <ion-button icon-left clear item-end (click)="save()">
           <ion-icon name="done-all"></ion-icon> Salvar
-        </button>
+        </ion-button>
       </ion-item>
       
     </ion-card>
@@ -57,12 +57,12 @@
       <ion-item>
         <p>Lat/Long( {{ item.location.lat }} , {{ item.location.lng }} )</p>
 
-        <button ion-button icon-left clear item-end (click)="removeLocation(item)">
+        <ion-button icon-left clear item-end (click)="removeLocation(item)">
           <ion-icon name="trash"></ion-icon>
-        </button>
-        <button ion-button icon-left clear item-end (click)="sendDataToServer(item)" *ngIf="!item.location.send">
+        </ion-button>
+        <ion-button icon-left clear item-end (click)="sendDataToServer(item)" *ngIf="!item.location.send">
           <ion-icon name="cloud-upload"></ion-icon>
-        </button>
+        </ion-button>
       </ion-item>
       
     </ion-card>

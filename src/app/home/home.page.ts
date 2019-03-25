@@ -2,6 +2,7 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth'
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-home',
@@ -19,8 +20,24 @@ export class HomePage implements OnInit {
   }
 
   ngOnInit() {
+    // TODO: enable the gif loader.
+
     if(this.authService.isAuthenticated()){
       this.goToBurnered();
+    }else{
+
+      this.authService.isAuthorized().then( (serverAuthorize) => {
+        if(serverAuthorize){
+          serverAuthorize.subscribe( (resp:any) => {
+            if(resp && resp.status){
+              this.goToBurnered();
+            }
+          });
+        }
+      }, (message) => {
+        // TODO: disable the gif loader.
+        console.log(message);
+      });
     }
 
     this.credentialsForm = this.formBuilder.group({

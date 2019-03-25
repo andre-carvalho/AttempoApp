@@ -1,15 +1,19 @@
 import { Component, OnInit } from '@angular/core';
-import { NavController, NavParams, ToastController } from '@ionic/angular';
+import { ToastController } from '@ionic/angular';
 import { AlertController } from '@ionic/angular';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationList } from '../../services/locations/locations';
 
+import { ActivatedRoute } from '@angular/router';
+// import 'rxjs/add/operator/filter';
+//import { DatePipe } from '@angular/common';
+
 
 @Component({
   selector: 'app-locations',
   templateUrl: './locations.page.html',
-  styleUrls: ['./locations.page.scss'],
+  styleUrls: ['./locations.page.scss']
 })
 export class LocationsPage implements OnInit {
 
@@ -32,12 +36,10 @@ export class LocationsPage implements OnInit {
     correctOrientation: true // Camera orientation  
   }
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, public geolocation: Geolocation,
-    private camera: Camera, private locationsProvider: LocationsProvider,
-    private toastController: ToastController, private alertCtrl: AlertController) {
-      this.currentLat = this.navParams.get('currentLat');
-      this.currentLng = this.navParams.get('currentLng');
-      this.startCamera = this.navParams.get('startCamera');
+  constructor(private locationsProvider: LocationsProvider,
+    private camera: Camera, public geolocation: Geolocation,
+    private toastController: ToastController, private alertCtrl: AlertController,
+    private route: ActivatedRoute) {
   }
 
   async presentToast(message: string) {
@@ -85,29 +87,39 @@ export class LocationsPage implements OnInit {
   }
 
   ngOnInit() {
-    console.log('ionViewDidLoad LocationsPage');
-    
-    this.createNewLocation();
-    this.reloadLocations();
+    this.route.queryParams
+      //.filter(params => params.currentLat)
+      .subscribe(params => {
+        console.log(params); // print all prarameters
 
-    if(this.startCamera) {
-      console.log('Start camera after init page...');
-      this.takePicture();
-    }
-    if(!this.currentLat || !this.currentLng) {
-      this.catchLocation();
-    }else{
-      this.model.lat = +(this.currentLat).toFixed(4);
-      this.model.lng = +(this.currentLng).toFixed(4);
-    }
+        this.currentLat = params.currentLat;
+        this.currentLng = params.currentLng;
+        this.startCamera = params.startCamera;
+   
+      this.createNewLocation();
+      this.reloadLocations();
+
+      if(this.startCamera) {
+        console.log('Start camera after init page...');
+        this.takePicture();
+      }
+      if(!this.currentLat || !this.currentLng) {
+        this.catchLocation();
+      }else{
+        this.model.lat = +(this.currentLat).toFixed(4);
+        this.model.lng = +(this.currentLng).toFixed(4);
+      }
+    });
   }
 
   reloadLocations() {
-    this.locationsProvider.getAll()
-      .then((result) => {
-        this.locations = result;
-        this.locations.reverse();
-      });
+    if(this.locationsProvider) {
+      this.locationsProvider.getAll()
+        .then((result) => {
+          this.locations = result;
+          this.locations.reverse();
+        });
+    }
   }
 
   createNewLocation() {

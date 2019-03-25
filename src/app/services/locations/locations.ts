@@ -18,7 +18,7 @@ export class LocationsProvider {
 
   private API_URL = '35.231.50.207';
 
-  constructor( private base64: Base64, private storage: Storage, private datepipe: DatePipe, public http: HttpClient) {
+  constructor( private base64: Base64, private storage: Storage, public http: HttpClient,private datepipe: DatePipe) {
     
     this.storage.get('api_url')
       .then((url: string) => {
@@ -60,34 +60,36 @@ export class LocationsProvider {
     return this.storage.remove(key);
   }
 
-  public getAll() {
+  public async getAll() {
 
     let locations: LocationList[] = [];
 
-    return this.storage.forEach((value: Location, key: string, iterationNumber: Number) => {
-      if(key!="api_url") {
-        let location = new LocationList();
-        location.key = key;
-        location.location = value;
-        locations.push(location);
-      }
-    })
-      .then(() => {
-        return Promise.resolve(locations);
-      })
-      .catch((error) => {
-        return Promise.reject(error);
+    try {
+      await this.storage.forEach((value: Location, key: string, iterationNumber: Number) => {
+        if (key != "api_url") {
+          let location = new LocationList();
+          location.key = key;
+          location.location = value;
+          locations.push(location);
+        }
       });
+      return Promise.resolve(locations);
+    }
+    catch (error) {
+      return Promise.reject(error);
+    }
   }
 
-  public sendToServer(location: Location) {
+  public async sendToServer(location: Location) {
     if(location.photo.startsWith('file')) {
-      return this.base64.encodeFile(location.photo).then((base64File: string) => {
-        let photo = base64File.replace('data:image/*;charset=utf-8;base64,','');
+      try {
+        const base64File = await this.base64.encodeFile(location.photo);
+        let photo = base64File.replace('data:image/*;charset=utf-8;base64,', '');
         return this.postDataToServer(location, photo);
-      }, (err) => {
+      }
+      catch (err) {
         console.log(err);
-      });
+      }
     }else {
       return this.postDataToServer(location, location.photo);
     }

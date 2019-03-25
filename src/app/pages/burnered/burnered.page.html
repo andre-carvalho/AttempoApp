@@ -16,26 +16,26 @@
 <ion-content padding>
     <ion-grid>
       <ion-row>
-        <ion-col col-12 class="burnedtext">
+        <ion-col size="12" class="burnedtext">
           TerraMA - ALERTAS
         </ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-1></ion-col>
-        <ion-col col-10 class="text1">
+        <ion-col size="1"></ion-col>
+        <ion-col size="10" class="text1">
           Aplicativo destinado à coleta de dados em campo com a finalidade de geração de alertas baseados em observações de eventos que possam interferir na qualidade do ar, qualidade da água, riscos em barragens de rejeito em área de mineração, incêndios florestais, movimentos de massa do tipo escorregamentos e corridas de lama, enchentes entre outros.
         </ion-col>
-        <ion-col col-1></ion-col>
+        <ion-col size="1"></ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-1></ion-col>
-        <ion-col col-10 class="text2">
+        <ion-col size="1"></ion-col>
+        <ion-col size="10" class="text2">
           Agora você pode nos ajudar a identificar estes eventos e agilizar as ações de mitigação dos efeitos.
         </ion-col>
-        <ion-col col-1></ion-col>
+        <ion-col size="1"></ion-col>
       </ion-row>
       <ion-row>
-        <ion-col col-12>
+        <ion-col size="12">
           <ion-label class="textred">Observou algo de anormal?</ion-label>
           <ion-label class="textred">Denuncie!</ion-label>
         </ion-col>
@@ -53,30 +53,31 @@
     <ion-toolbar>
       <ion-grid>
         <ion-row>
-          <ion-col col-1></ion-col>
-          <ion-col col-2>
+          <ion-col size="1"></ion-col>
+          <ion-col size="2">
             <button icon-only (click)="goToInfo()">
               <ion-icon name="information-circle"></ion-icon>
             </button>
           </ion-col>
-          <ion-col col-2>
+          <ion-col size="2">
             <button icon-only (click)="goToMap()">
               <ion-icon name="pin"></ion-icon>
             </button>
           </ion-col>
-          <ion-col col-2>
+          <ion-col size="2">
           </ion-col>
-          <ion-col col-2>
-            <button icon-only (click)="goToEdit()">
+          <ion-col size="2">
+            <!--(click)="goToEdit()">-->
+            <ion-button icon-only expand="block" routerLink="/locations" routerDirection="root">
               <ion-icon name="list-box"></ion-icon>
-            </button>
+            </ion-button>
           </ion-col>
-          <ion-col col-2>
+          <ion-col size="2">
             <button icon-only (click)="goToEdit()">
               <ion-icon name="cloud-upload"></ion-icon>
             </button>
           </ion-col>
-          <ion-col col-1></ion-col>
+          <ion-col size="1"></ion-col>
         </ion-row>
       </ion-grid>
     </ion-toolbar>

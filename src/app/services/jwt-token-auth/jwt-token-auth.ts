@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Storage } from '@ionic/storage';
 import { tap, catchError } from 'rxjs/operators';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, Observer } from 'rxjs';
 
 // The name used as key the token into localstarage
 const TOKEN_KEY = 'access_token';
@@ -14,9 +14,9 @@ const TOKEN_KEY = 'access_token';
 })
 export class JwtTokenAuthProvider {
  
-  url = "http://127.0.0.1:5000";
-  user = null;
-  authenticationState = new BehaviorSubject(false);
+  private url:string = "http://127.0.0.1:5000";
+  private user: any = null;
+  private authenticationState: BehaviorSubject<boolean> = new BehaviorSubject(false);
  
   constructor(private http: HttpClient, private helper: JwtHelperService, private storage: Storage,
     private plt: Platform, private alertController: AlertController) {
@@ -121,31 +121,44 @@ export class JwtTokenAuthProvider {
     );
   }
  
-  /*
-  getSpecialData() {
-    var options = new HttpHeaders(
-      {'Content-Type':'application/json'}
-    );
-    this.storage.get(TOKEN_KEY).then(token => {
+  /**
+   * Asks for server if token still valid.
+   */
+  isAuthorized() {
+    return this.storage.get(TOKEN_KEY).then(token => {
       if (token) {
-        options.append('Authorization', token);
+        let options = new HttpHeaders(
+          {
+            'Content-Type':'application/json',
+            'Authorization': 'Bearer '+token
+          }
+        );
+        //options.append('Authorization', token);
+        return this.http.get(`${this.url}/isAuthorized`, {headers:options}).pipe(
+          catchError(e => {
+            // let status = e.status;
+            // if (status === 401) {
+            //   this.showAlert('Server logout fail');
+            // }
+            // if (status === 403) {
+            //   this.showAlert('Server say, FORBIDDEN');
+            // }
+            throw new Error(e.error.message);
+          })
+        );
+      }else{
+        this.authenticationState.next(false);
       }
     });
-    return this.http.get(`${this.url}/isAuthorized`, {headers:options}).pipe(
-      catchError(e => {
-        let status = e.status;
-        if (status === 401) {
-          this.showAlert('You are not authorized for this!');
-          this.logout();
-        }
-        throw new Error(e);
-      })
-    );
+    
   }
-  */
- 
+   
   isAuthenticated() {
     return this.authenticationState.value;
+  }
+
+  getUser() {
+    return this.user;
   }
  
   showAlert(msg: string) {

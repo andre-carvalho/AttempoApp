@@ -1,9 +1,31 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>map</ion-title>
+  <ion-toolbar>      
+    <ion-buttons end>
+      <button style="visibility: hidden;" id="infowindowhidden" (click)="useCurrentCoords()"></button>
+      <button ion-button icon-only (click)="reloadLocations()">
+        <ion-icon name="pin"></ion-icon>
+      </button>
+      <button ion-button icon-only (click)="goToLocations()">
+          <ion-icon name="camera"></ion-icon>
+      </button>
+      <button ion-button icon-only [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
+          <ion-icon name="locate"></ion-icon>
+      </button>
+    </ion-buttons>
+    <ion-title>Mapa</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content padding>
-
+  <ion-fab bottom right>
+    <button ion-fab mini><ion-icon name="pin"></ion-icon></button>
+    <ion-fab-list side="left">
+      <button ion-fab mini (click)="addLocation()"><ion-icon name="add-circle"></ion-icon></button>
+      <button ion-fab mini (click)="removeLastLocation()"><ion-icon name="remove-circle"></ion-icon></button>
+    </ion-fab-list>
+  </ion-fab>
+  
+  <div id="map_canvas"></div>
+  
 </ion-content>
+
