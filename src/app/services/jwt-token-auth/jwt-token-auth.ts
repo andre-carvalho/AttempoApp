@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Storage } from '@ionic/storage';
-import { tap, catchError } from 'rxjs/operators';
-import { BehaviorSubject, Observable, Observer } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Observer, throwError } from 'rxjs';
 
 // The name used as key the token into localstarage
 const TOKEN_KEY = 'access_token';
@@ -135,18 +135,25 @@ export class JwtTokenAuthProvider {
         );
         //options.append('Authorization', token);
         return this.http.get(`${this.url}/isAuthorized`, {headers:options}).pipe(
+          map(data => {
+            if (data === null) return throwError("null data");
+            return data;
+          }),
           catchError(e => {
-            // let status = e.status;
+            let status = e.status;
+            //console.log(status);
+            return throwError(status);
             // if (status === 401) {
             //   this.showAlert('Server logout fail');
             // }
             // if (status === 403) {
             //   this.showAlert('Server say, FORBIDDEN');
             // }
-            throw new Error(e.error.message);
+            // throw new Error(status);
           })
         );
       }else{
+        // if don't have token, change authentication control to false.
         this.authenticationState.next(false);
       }
     });

@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth'
+import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth';
+import { AlertController } from '@ionic/angular'
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -16,7 +17,8 @@ export class HomePage implements OnInit {
 
   constructor(private router: Router,
     private authService: JwtTokenAuthProvider,
-    private formBuilder: FormBuilder) {
+    private formBuilder: FormBuilder,
+    private alertController: AlertController) {
   }
 
   ngOnInit() {
@@ -34,9 +36,15 @@ export class HomePage implements OnInit {
             }
           });
         }
-      }, (message) => {
+      }, (HTTPCodeError) => {
         // TODO: disable the gif loader.
-        console.log(message);
+        if (HTTPCodeError === 401) {
+          this.showAlert('A comunicação com o servidor falhou.', 'Error');
+        }
+        if (HTTPCodeError === 403) {
+          this.showAlert('Autorização negada, faça login.', 'Error');
+        }
+        console.log(HTTPCodeError);
       });
     }
 
@@ -69,6 +77,19 @@ export class HomePage implements OnInit {
         this.goToBurnered();
       });
     });
+  }
+
+  /**
+   * To display alerts with simple message.
+   * @param msg Message string
+   */
+  private showAlert(msg: string, headerMsg: string) {
+    let alert = this.alertController.create({
+      message: msg,
+      header: headerMsg,
+      buttons: ['OK']
+    });
+    alert.then(alert => alert.present());
   }
 
 }
