@@ -16,9 +16,16 @@ import { Base64 } from '@ionic-native/base64/ngx';
 })
 export class LocationsProvider {
 
+  // default API URL
   private API_URL = '35.231.50.207';
 
-  constructor( private base64: Base64, private storage: Storage, public http: HttpClient,private datepipe: DatePipe) {
+  // keys in storage that should ignored in this class.
+  private keys=['access_token','api_url'];
+
+  constructor( private base64: Base64,
+    private storage: Storage,
+    public http: HttpClient,
+    private datepipe: DatePipe) {
     
     this.storage.get('api_url')
       .then((url: string) => {
@@ -66,7 +73,7 @@ export class LocationsProvider {
 
     try {
       await this.storage.forEach((value: Location, key: string, iterationNumber: Number) => {
-        if (key != "api_url") {
+        if (this.keys.indexOf(key)<0) {
           let location = new LocationList();
           location.key = key;
           location.location = value;

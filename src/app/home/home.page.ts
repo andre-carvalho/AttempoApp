@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth';
 import { AlertController } from '@ionic/angular'
-import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-home',
@@ -55,10 +54,22 @@ export class HomePage implements OnInit {
   }
 
   onSubmit() {
-    this.authService.login(this.credentialsForm.value).subscribe(loginstatus => {
-      console.log(loginstatus.toString());
-      this.goToBurnered();
-    });
+    this.authService.login(this.credentialsForm.value).subscribe(
+      (loginstatus:any) => {
+        if(loginstatus.status==='success'){
+          this.goToBurnered();
+        }
+      },
+      err => {
+        if (err.code === 401) {
+          this.showAlert('A comunicação com o servidor falhou.', 'Error');
+        }else if (err.code === 403) {
+          this.showAlert('Autorização negada, faça login.', 'Error');
+        }else{
+          this.showAlert('Falha na comunicação com o servidor..', 'Error');
+        }
+      }
+    );
   }
 
   goToBurnered() {

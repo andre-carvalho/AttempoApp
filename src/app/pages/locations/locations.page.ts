@@ -6,9 +6,6 @@ import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationList } from '../../services/locations/locations';
 
 import { ActivatedRoute } from '@angular/router';
-// import 'rxjs/add/operator/filter';
-//import { DatePipe } from '@angular/common';
-
 
 @Component({
   selector: 'app-locations',

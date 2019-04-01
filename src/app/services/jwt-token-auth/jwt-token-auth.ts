@@ -1,10 +1,10 @@
-import { Platform, AlertController } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Storage } from '@ionic/storage';
 import { tap, catchError, map } from 'rxjs/operators';
-import { BehaviorSubject, Observable, Observer, throwError } from 'rxjs';
+import { BehaviorSubject, throwError } from 'rxjs';
 
 // The name used as key the token into localstarage
 const TOKEN_KEY = 'access_token';
@@ -19,7 +19,7 @@ export class JwtTokenAuthProvider {
   private authenticationState: BehaviorSubject<boolean> = new BehaviorSubject(false);
  
   constructor(private http: HttpClient, private helper: JwtHelperService, private storage: Storage,
-    private plt: Platform, private alertController: AlertController) {
+    private plt: Platform) {
     this.plt.ready().then(() => {
       this.checkToken();
     });
@@ -47,8 +47,7 @@ export class JwtTokenAuthProvider {
     
     return this.http.post(`${this.url}/register`, credentials, {headers:options} ).pipe(
       catchError(e => {
-        this.showAlert(e.error.message);
-        throw new Error(e);
+        throw throwError(e);
       })
     );
   }
@@ -59,7 +58,6 @@ export class JwtTokenAuthProvider {
    */
   login(credentials: string) {
     credentials = JSON.stringify(credentials);
-    //credentials = JSON.parse(credentials);
     var options = new HttpHeaders({'Content-Type':'application/json'});
     return this.http.post(`${this.url}/login`, credentials, {headers:options})
       .pipe(
@@ -75,8 +73,7 @@ export class JwtTokenAuthProvider {
           this.authenticationState.next(true);
         }),
         catchError(e => {
-          this.showAlert(e.error.msg);
-          throw new Error(e);
+          throw throwError(e);
         })
       );
   }
@@ -90,9 +87,9 @@ export class JwtTokenAuthProvider {
           this.authenticationState.next(false);
         });
       }
-    }, (error:any) => {
-      this.showAlert('Server say: '+error.message);
+    }, (e:any) => {
       this.authenticationState.next(false);
+      throw throwError(e);
     });
   }
 
@@ -109,14 +106,7 @@ export class JwtTokenAuthProvider {
     });
     return this.http.get(`${this.url}/logout`, {headers:options}).pipe(
       catchError(e => {
-        // let status = e.status;
-        // if (status === 401) {
-        //   this.showAlert('Server logout fail');
-        // }
-        // if (status === 403) {
-        //   this.showAlert('Server say, FORBIDDEN');
-        // }
-        throw new Error(e.error.message);
+        throw throwError(e);
       })
     );
   }
@@ -140,16 +130,7 @@ export class JwtTokenAuthProvider {
             return data;
           }),
           catchError(e => {
-            let status = e.status;
-            //console.log(status);
-            return throwError(status);
-            // if (status === 401) {
-            //   this.showAlert('Server logout fail');
-            // }
-            // if (status === 403) {
-            //   this.showAlert('Server say, FORBIDDEN');
-            // }
-            // throw new Error(status);
+            throw throwError(e);
           })
         );
       }else{
@@ -166,14 +147,5 @@ export class JwtTokenAuthProvider {
 
   getUser() {
     return this.user;
-  }
- 
-  showAlert(msg: string) {
-    let alert = this.alertController.create({
-      message: msg,
-      header: 'Error',
-      buttons: ['OK']
-    });
-    alert.then(alert => alert.present());
   }
 }
