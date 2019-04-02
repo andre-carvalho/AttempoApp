@@ -25,7 +25,7 @@ export class MapPage implements OnInit, AfterContentInit {
   savedLocations: any;
   private locationOptions: any;
   // The Google API key is loaded from google-key.js file.
-  private apiKey: any = 'YOUR_KEY';
+  private apiKey: any = environment.googleMapApiKey;
   public btColor: string = '#c0c0c0';
   
   constructor(private alertCtrl: AlertController,
@@ -33,6 +33,19 @@ export class MapPage implements OnInit, AfterContentInit {
     private router: Router,
     public geolocation: Geolocation,
     private route: ActivatedRoute) {
+    
+    /*load google map script dynamically */
+    const script = document.createElement('script');
+    script.id = 'googleMap';
+    if (this.apiKey) {
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=' + this.apiKey;
+    } else {
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=';
+    }
+    script.onload=(() => {
+      this.startMapComponent();
+    });
+    document.head.appendChild(script);
     
     this.markers = [];
     this.currentCoords = {'lat':0, 'lng':0};
@@ -47,7 +60,10 @@ export class MapPage implements OnInit, AfterContentInit {
     });
   }
 
-  ngAfterContentInit():void {
+  ngAfterContentInit():void {   
+  }
+
+  async startMapComponent() {
     this.initializeMap();
     this.addLocation();
   }
