@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterContentInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
@@ -13,7 +13,7 @@ declare var google: any;
   styleUrls: ['./map.page.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class MapPage implements OnInit, AfterContentInit {
+export class MapPage implements OnInit {
 
   @ViewChild('map_canvas') map_canvas:any;
   locations: LocationList[];
@@ -52,7 +52,6 @@ export class MapPage implements OnInit, AfterContentInit {
     this.locationOptions = {timeout: 10000, enableHighAccuracy: true};
   }
 
-  /* Initialize the map only when Ion View is loaded */
   ngOnInit():void {
     this.route.queryParams
       .subscribe(params => {
@@ -60,9 +59,7 @@ export class MapPage implements OnInit, AfterContentInit {
     });
   }
 
-  ngAfterContentInit():void {   
-  }
-
+  /* Initialize the map only when Google Maps API Script was loaded */
   async startMapComponent() {
     this.initializeMap();
     this.addLocation();
