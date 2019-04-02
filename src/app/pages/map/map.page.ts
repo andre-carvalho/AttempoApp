@@ -26,7 +26,7 @@ export class MapPage implements OnInit {
   private locationOptions: any;
   // The Google API key is loaded from google-key.js file.
   private apiKey: any = environment.googleMapApiKey;
-  public btColor: string = '#c0c0c0';
+  public btColor: string = '#FFFFFF';
   
   constructor(private alertCtrl: AlertController,
     private locationsProvider: LocationsProvider,
@@ -65,6 +65,9 @@ export class MapPage implements OnInit {
     this.addLocation();
   }
 
+  /**
+   * Disabled...
+   */
   goToLocations() {
     if (this.markers.length) {
       let l = this.markers.length;
@@ -219,7 +222,7 @@ export class MapPage implements OnInit {
   stopWatchingLocation() {
     // To stop notifications
     if (this.currentLocation != undefined) {
-      this.btColor = '#c0c0c0';// off
+      this.btColor = '#FFFFFF';// off
       this.currentLocation.setMap(null);
       this.watchLocation.unsubscribe();
     }else{
