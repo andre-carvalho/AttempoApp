@@ -1,19 +1,21 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, ViewChild, AfterContentInit, ViewEncapsulation } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { Geolocation } from '@ionic-native/geolocation';
+import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, LocationList } from '../../services/locations/locations';
+import { environment } from '../../../environments/environment';
 
-declare var google;
+declare var google: any;
 
 @Component({
   selector: 'app-map',
   templateUrl: './map.page.html',
   styleUrls: ['./map.page.scss'],
+  encapsulation: ViewEncapsulation.None
 })
+export class MapPage implements OnInit, AfterContentInit {
 
-export class MapPage implements OnInit {
-
+  @ViewChild('map_canvas') map_canvas:any;
   locations: LocationList[];
   map: any;
   markers: any;
@@ -21,19 +23,31 @@ export class MapPage implements OnInit {
   currentLocation: any;
   currentCoords: any;
   savedLocations: any;
+  private locationOptions: any;
+  // The Google API key is loaded from google-key.js file.
+  private apiKey: any = 'YOUR_KEY';
   public btColor: string = '#c0c0c0';
   
   constructor(private alertCtrl: AlertController,
     private locationsProvider: LocationsProvider,
     private router: Router,
-    public geolocation: Geolocation) {
+    public geolocation: Geolocation,
+    private route: ActivatedRoute) {
     
     this.markers = [];
     this.currentCoords = {'lat':0, 'lng':0};
+    this.locationOptions = {timeout: 10000, enableHighAccuracy: true};
   }
 
   /* Initialize the map only when Ion View is loaded */
-  ngOnInit() {
+  ngOnInit():void {
+    this.route.queryParams
+      .subscribe(params => {
+        console.log(params); // print all prarameters
+    });
+  }
+
+  ngAfterContentInit():void {
     this.initializeMap();
     this.addLocation();
   }
@@ -130,22 +144,20 @@ export class MapPage implements OnInit {
     }
 
     /* Show demo location */
-    this.map = new google.maps.Map(document.getElementById("map_canvas"), options);
+    this.map = new google.maps.Map(this.map_canvas.nativeElement, options);
   }
 
   addLocation() {
-  
-    let locationOptions = {timeout: 10000, enableHighAccuracy: true};
-
-    this.geolocation.getCurrentPosition((position) => {
-
+    this.geolocation.getCurrentPosition(this.locationOptions).then(
+      (position) => {
         /* We can show our location only if map was previously initialized */
         this.showMyLocation(position);
-
-    }, (error) => {
-      console.log('Error getting location', error);
-      this.alertPresentation(error);
-    }, locationOptions);
+      },
+      (error) => {
+        console.log('Error getting location', error);
+        this.alertPresentation(error);
+      }
+    );
   }
 
   async alertPresentation(error: PositionError) {
@@ -162,30 +174,32 @@ export class MapPage implements OnInit {
     this.stopWatchingLocation();
 
     if(this.watchLocation == undefined) {
-      this.watchLocation = this.geolocation.watchPosition( (position) => {
-        if (position != undefined) {
-          this.btColor = '#00ff00';// on
-          let newPosition = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-          this.map.setCenter(newPosition);
-          this.map.setZoom(15);
-          
-          if (this.currentLocation != undefined) {
-            this.currentLocation.setMap(null);
-          }
-
-          this.currentLocation = new google.maps.Marker({
-              map: this.map,
-              position: newPosition,
-              icon: {
-                url: "./assets/imgs/marker25x25.png",
-                size: {
-                width: 25,
-                height: 25
-              }
+      this.watchLocation = this.geolocation.watchPosition(this.locationOptions).subscribe(
+        (position) => {
+          if (position != undefined) {
+            this.btColor = '#00ff00';// on
+            let newPosition = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            this.map.setCenter(newPosition);
+            this.map.setZoom(15);
+            
+            if (this.currentLocation != undefined) {
+              this.currentLocation.setMap(null);
             }
-          });
+
+            this.currentLocation = new google.maps.Marker({
+                map: this.map,
+                position: newPosition,
+                icon: {
+                  url: "./assets/imgs/marker25x25.png",
+                  size: {
+                  width: 25,
+                  height: 25
+                }
+              }
+            });
+          }
         }
-      });
+      );
     }
   }
 

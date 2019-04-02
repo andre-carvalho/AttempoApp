@@ -31,7 +31,7 @@ export class BurneredPage implements OnInit {
   }
 
   goToMap() {
-    this.router.navigate(['/map'])
+    this.router.navigate(['/map'], {queryParams:{startCamera:false}})
   }
   
   goToCamera() {
