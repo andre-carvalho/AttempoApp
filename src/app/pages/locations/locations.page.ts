@@ -102,8 +102,8 @@ export class LocationsPage implements OnInit {
       if(!this.currentLat || !this.currentLng) {
         this.catchLocation();
       }else{
-        this.model.lat = +(this.currentLat).toFixed(4);
-        this.model.lng = +(this.currentLng).toFixed(4);
+        this.model.lat = (+(+this.currentLat).toFixed(4));
+        this.model.lng = (+(+this.currentLng).toFixed(4));
       }
     });
   }

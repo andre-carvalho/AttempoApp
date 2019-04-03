@@ -3,4 +3,11 @@ app-map {
         height: 100%;
         width: 100%;
     }
+    .mk-thead{
+        font-weight: bold;
+        background-color: aliceblue;
+    }
+    .marker_info,tr,td{
+        border: 1px solid rgb(189, 207, 183);
+    }
 }

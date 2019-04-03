@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
@@ -30,22 +31,33 @@ export class MapPage implements OnInit {
   
   constructor(private alertCtrl: AlertController,
     private locationsProvider: LocationsProvider,
+    private location: Location,
     private router: Router,
     public geolocation: Geolocation,
     private route: ActivatedRoute) {
     
-    /*load google map script dynamically */
-    const script = document.createElement('script');
-    script.id = 'googleMap';
-    if (this.apiKey) {
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=' + this.apiKey;
-    } else {
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=';
-    }
-    script.onload=(() => {
+    /*load google map script dynamically if not loaded yet */
+    if(!document.getElementById('googleMap')) {
+      const script = document.createElement('script');
+      script.id = 'googleMap';
+      if (this.apiKey) {
+          script.src = 'https://maps.googleapis.com/maps/api/js?key=' + this.apiKey;
+      } else {
+          script.src = 'https://maps.googleapis.com/maps/api/js?key=';
+      }
+      script.onload=(() => {
+        this.startMapComponent();
+      });
+      document.head.appendChild(script);
+    }else{
+      if(!this.map_canvas){
+        const div = document.createElement('div');
+        div.id = 'map_canvas';
+        div.className="map_canvas";
+        document.body.appendChild(div);
+      }
       this.startMapComponent();
-    });
-    document.head.appendChild(script);
+    }
     
     this.markers = [];
     this.currentCoords = {'lat':0, 'lng':0};
@@ -53,21 +65,23 @@ export class MapPage implements OnInit {
   }
 
   ngOnInit():void {
-    this.route.queryParams
-      .subscribe(params => {
-        console.log(params); // print all prarameters
-    });
+    // this.route.queryParams
+    //   .subscribe(params => {
+    //     console.log(params); // print all prarameters
+    // });
   }
 
   /* Initialize the map only when Google Maps API Script was loaded */
   async startMapComponent() {
-    this.initializeMap();
-    this.addLocation();
+    if(this.initializeMap()){
+      this.addLocation();
+    }
   }
 
   /**
    * Disabled...
    */
+  /*
   goToLocations() {
     if (this.markers.length) {
       let l = this.markers.length;
@@ -79,6 +93,11 @@ export class MapPage implements OnInit {
         }
       });
     }
+  }
+  */
+
+  goBack() {
+    this.location.back();
   }
 
   useCurrentCoords() {
@@ -119,8 +138,8 @@ export class MapPage implements OnInit {
       let lng = marker.getPosition().lng();
 
       let markerInfo = '<h6>Latitude:'+lat.toFixed(4)+'</h6>'+
-      '<h6>Longitude:'+lng.toFixed(4)+'</h6><input type="button" value="Usar este local" '+
-      'onclick="document.getElementById(\'infowindowhidden\').click()" />';
+      '<h6>Longitude:'+lng.toFixed(4)+'</h6><a href="javascript:'+
+      'document.getElementById(\'infowindowhidden\').click();">Usar este local</a>';
 
       let infoModal = new google.maps.InfoWindow({
           content: markerInfo
@@ -138,14 +157,14 @@ export class MapPage implements OnInit {
     google.maps.event.addListener(marker, 'dragstart', () => {
       marker.getInfoModal().close();
     });
-    
-    // google.maps.event.addListener(marker, 'dragend', () => {
-    //   this.resetMarkerPosition(marker);
-    // });
   }
 
-  initializeMap() {
+  initializeMap(): boolean {
 
+    // skip if no map
+    if(!this.map_canvas) {
+      return false;
+    }
     let demoCenter = new google.maps.LatLng(-23,-45);
 
     let options = {
@@ -161,6 +180,7 @@ export class MapPage implements OnInit {
 
     /* Show demo location */
     this.map = new google.maps.Map(this.map_canvas.nativeElement, options);
+    return true;
   }
 
   addLocation() {
@@ -179,7 +199,7 @@ export class MapPage implements OnInit {
   async alertPresentation(error: PositionError) {
     const alert = await this.alertCtrl.create({
       header: 'Falha GPS',
-      subHeader: 'Falou ao capturar sua localização. Erro informado: '+error.message,
+      subHeader: 'Falhou ao capturar sua localização. Erro informado: '+error.message,
       buttons: ['ok']
     });
     alert.present();
@@ -252,37 +272,76 @@ export class MapPage implements OnInit {
 
   displaySavedMarkers(locations: LocationList[]) {
     this.savedLocations = [];
-    let localColor = "FE7569";
-    let localImage = new google.maps.MarkerImage(
-      "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + localColor,
+    let color = {local:"FE7569",remote:"5cf5e0"};
+    /**
+     * Make a new marker image.
+     * @param color pin color
+     * @param char character to print inside pin
+     */
+    let gImg = function(color:string, char:string){return new google.maps.MarkerImage(
+      "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+char+"|" + color,
       new google.maps.Size(21, 34),
       new google.maps.Point(0,0),
       new google.maps.Point(10, 34)
-    );
-    let remoteColor = "5cf5e0";
-    let remoteImage = new google.maps.MarkerImage(
-      "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + remoteColor,
-      new google.maps.Size(21, 34),
-      new google.maps.Point(0,0),
-      new google.maps.Point(10, 34)
-    );
+    )};
+
     for (const key in locations) {
       if (locations.hasOwnProperty(key)) {
         const item = locations[key];
         if (item.location != undefined) {
           let newPosition = new google.maps.LatLng(item.location.lat, item.location.lng);
 
+          let char=(item.location.send)?('R'):('L'),
+          icon=((item.location.send)?(gImg(color.remote,(char))):(gImg(color.local,(char))));
+
           this.savedLocations.push(new google.maps.Marker({
               map: this.map,
               position: newPosition,
               title: item.location.description,
-              label: ((item.location.send)?('R'):('L')),
-              icon: ((item.location.send)?(remoteImage):(localImage))
+              icon: icon,
+              location: item.location
             })
           );
         }
       }
     }
-    
+
+    // Attach balloon on each marker
+    this.attachBalloon(this.savedLocations);
+  }
+
+  private attachBalloon(markers:any): any {
+    markers.forEach( (marker:any) => {
+      google.maps.event.addListener(marker, 'click', () => {
+        let lat = marker.getPosition().lat();
+        let lng = marker.getPosition().lng();
+
+        let thead = 
+        '<tr class="mk-thead"><td colspan="2">'+
+        'Salvo no servidor?'+((marker.location.send)?('sim'):('não'))+
+        '</td></tr>';
+        let tbody = 
+        ((marker.location)?(
+          '<tr><td>Descrição:</td><td>'+marker.location.description+'</td></tr>'+
+          '<tr><td>Data:</td><td>'+marker.location.timeref.toLocaleDateString()+'</td></tr>'
+        ):(''))+
+        '<tr><td>Latitude:</td><td>'+lat.toFixed(4)+'</td></tr>'+
+        '<tr><td>Longitude:</td><td>'+lng.toFixed(4)+'</td></tr>';
+        
+        let markerInfo = '<table class="marker_info">'+thead+tbody+'</table>';
+
+        let infoModal = new google.maps.InfoWindow({
+            content: markerInfo
+        });
+        
+        infoModal.open(this.map, marker);
+
+        marker.getInfoModal=function(){
+          return infoModal;
+        };
+
+        this.setCurrentCoords(lat, lng);
+      });
+    });
   }
 }

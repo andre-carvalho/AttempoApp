@@ -5,13 +5,11 @@
       <ion-button icon-only (click)="reloadLocations()">
         <ion-icon name="refresh"></ion-icon>Update
       </ion-button>
-      <!--ion-button icon-only (click)="goToLocations()">
-        <ion-icon name="camera"></ion-icon>
-      </ion-button-->
       <ion-button icon-only [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
         <ion-icon name="locate"></ion-icon>Tracking
       </ion-button>
     </ion-buttons>
+    <ion-icon name="arrow-round-back" (click)="goBack()"></ion-icon>
     <ion-title>Mapa</ion-title>
   </ion-toolbar>
 </ion-header>
