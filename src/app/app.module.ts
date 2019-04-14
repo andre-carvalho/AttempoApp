@@ -1,17 +1,19 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
-
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
-
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
 import { Storage, IonicStorageModule } from '@ionic/storage';
 import { JwtModule, JWT_OPTIONS } from '@auth0/angular-jwt';
 import { DatePipe } from '@angular/common';
+import { ImagePicker } from '@ionic-native/image-picker/ngx';
+import { LocationsProvider } from './services/locations/locations';
+import { Crop } from '@ionic-native/crop/ngx';
+import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
 
 export function jwtOptionsFactory(storage) {
   return {
@@ -43,7 +45,12 @@ export function jwtOptionsFactory(storage) {
     StatusBar,
     SplashScreen,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    DatePipe
+    DatePipe,
+    ImagePicker,
+    Crop,
+    FileTransfer,
+    FileTransferObject,
+    LocationsProvider
   ],
   bootstrap: [AppComponent]
 })

@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Base64 } from '@ionic-native/base64/ngx';
+//import { Base64 } from '@ionic-native/base64/ngx';
+import { Crop } from '@ionic-native/crop/ngx';
+import { ImagePicker } from '@ionic-native/image-picker/ngx';
+import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer/ngx';
+import { catchError, finalize } from 'rxjs/operators';
 
 
 /*
@@ -17,12 +21,17 @@ import { Base64 } from '@ionic-native/base64/ngx';
 export class LocationsProvider {
 
   // default API URL
-  private API_URL = '35.231.50.207';
+  //private API_URL = '35.231.50.207';
+  private API_URL = '192.168.1.121:5000';
 
   // keys in storage that should ignored in this class.
   private keys=['access_token','api_url'];
 
-  constructor( private base64: Base64,
+  private uploadView:any;
+
+  constructor(private imagePicker: ImagePicker,
+    private crop: Crop,
+    private transfer: FileTransfer,
     private storage: Storage,
     public http: HttpClient,
     private datepipe: DatePipe) {
@@ -87,24 +96,69 @@ export class LocationsProvider {
     }
   }
 
-  public async sendToServer(location: Location) {
-    if(location.photo.startsWith('file')) {
-      try {
-        const base64File = await this.base64.encodeFile(location.photo);
-        let photo = base64File.replace('data:image/*;charset=utf-8;base64,', '');
-        return this.postDataToServer(location, photo);
-      }
-      catch (err) {
-        console.log(err);
-      }
-    }else {
-      return this.postDataToServer(location, location.photo);
-    }
+  // public sendToServer(location: Location) {
+  //   if(location.photo.startsWith('file')) {
+  //     try {
+  //       return this.uploadPhoto(location);
+  //     }
+  //     catch (err) {
+  //       console.log(err);
+  //     }
+  //   }
+  // }
+
+  public async postData(formData: FormData) {
+    let url = 'http://' + this.API_URL + '/locations';
+    return this.http.post<boolean>(url, formData);
   }
+
+  uploadSuccess(serverResponse:any) {
+    console.log('Finalise upload call with error:'+serverResponse);
+    this.uploadView.uploadSuccess(serverResponse);
+  }
+
+  uploadError(serverResponse:any) {
+    console.log('Finalise upload call with error:'+serverResponse);
+    return this.uploadView.uploadError(serverResponse);
+  }
+
+  uploadCommon() {
+    console.log('Finalise upload call.');
+  }
+
+  private uploadPhoto(location: any) {
+    let photo=location.photo;
+    const fileTransfer: FileTransferObject = this.transfer.create();
+    
+    // let headers = new HttpHeaders().set('Content-Type', 'multipart/form-data');
+    // //headers.append('Authorization','Bearer ' + token);
+    // headers.append('Access-Control-Allow-Origin' , '*');
+    // headers.append('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT');
+    // headers.append('Accept','application/json');
+
+    const uploadOpts: FileUploadOptions = {
+        fileKey: 'file',
+        fileName: photo.substr(photo.lastIndexOf('/') + 1)
+    };
+
+    let url = 'http://' + this.API_URL + '/locations';
+
+    return fileTransfer.upload(photo, url, uploadOpts);
+      // .then((data) => {
+      //   console.log(data);
+      //   //this.respData = JSON.parse(data.response);
+      //   console.log(JSON.parse(data.response));
+      //   //this.fileUrl = this.respData.fileUrl;
+      // }, (err) => {
+      //   console.log(err);
+      // });
+  }
+
 
   private postDataToServer(location: any, photo: string) {
 
-    let headers = new HttpHeaders().set('Content-Type', 'application/json');
+    let headers = new HttpHeaders().set('Content-Type', 'multipart/form-data');
+    //headers.append('Authorization','Bearer ' + token);
     headers.append('Access-Control-Allow-Origin' , '*');
     headers.append('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT');
     headers.append('Accept','application/json');
@@ -115,7 +169,7 @@ export class LocationsProvider {
       'description':location.description,
       'lat':location.lat,
       'lng':location.lng,
-      'datetime':location.timeref.toISOString(),
+      'datetime':location.timeref,
       'photo':photo
     }
 
@@ -129,6 +183,38 @@ export class LocationsProvider {
     });
 
   }
+
+  cropUpload() {
+    this.imagePicker.getPictures({ maximumImagesCount: 1, outputType: 0 }).then((results) => {
+      for (let i = 0; i < results.length; i++) {
+          console.log('Image URI: ' + results[i]);
+          this.crop.crop(results[i], { quality: 100 })
+            .then(
+              newImage => {
+                console.log('new image path is: ' + newImage);
+                const fileTransfer: FileTransferObject = this.transfer.create();
+                const uploadOpts: FileUploadOptions = {
+                   fileKey: 'data',
+                   fileName: newImage.substr(newImage.lastIndexOf('/') + 1)
+                };
+
+                let url = 'http://' + this.API_URL + '/locations';
+  
+                fileTransfer.upload(newImage, url, uploadOpts)
+                 .then((data) => {
+                   console.log(data);
+                   //this.respData = JSON.parse(data.response);
+                   console.log(JSON.parse(data.response));
+                   //this.fileUrl = this.respData.fileUrl;
+                 }, (err) => {
+                   console.log(err);
+                 });
+              },
+              error => console.error('Error cropping image', error)
+            );
+      }
+    }, (err) => { console.log(err); });
+  }
 }
 
 export class Location {
@@ -136,6 +222,7 @@ export class Location {
   lng: number;
   description: string;
   photo: string;
+  photoURI: string;
   timeref: Date;
   send: boolean;
 }

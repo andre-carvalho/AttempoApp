@@ -14,7 +14,7 @@ const TOKEN_KEY = 'access_token';
 })
 export class JwtTokenAuthProvider {
  
-  private url:string = "http://127.0.0.1:5000";
+  private url:string = "http://192.168.1.121:8000";
   private user: any = null;
   private authenticationState: BehaviorSubject<boolean> = new BehaviorSubject(false);
  

@@ -20,17 +20,17 @@ export class LocationsPage implements OnInit {
   public currentLng: any;
   public startCamera: any;
   options: CameraOptions = {
-    quality: 30,
+    quality: 80,
     destinationType: this.camera.DestinationType.FILE_URI,
     sourceType: this.camera.PictureSourceType.CAMERA, //Source is camera
     allowEdit: false, // Allow user to edit before saving
     mediaType: this.camera.MediaType.PICTURE,
     encodingType: this.camera.EncodingType.JPEG, // Save as JPEG
-    targetWidth: 300,
-    targetHeight: 300,
     saveToPhotoAlbum: true, // Album save opton
     correctOrientation: true // Camera orientation  
-  }
+  };
+  // targetWidth: 300,
+  // targetHeight: 300,
 
   constructor(private locationsProvider: LocationsProvider,
     private camera: Camera, public geolocation: Geolocation,
@@ -140,6 +140,7 @@ export class LocationsPage implements OnInit {
       // If it's base64:
       //this.model.photo = 'data:image/png;base64,' + imageData;
       this.model.photo = imageData;
+      this.model.photoURI = (<any>window).Ionic.WebView.convertFileSrc(imageData);
      }).catch((error) => {
       console.log('Error on taking photo', error);
       this.presentToast('Falhou ao acionar a camera de seu dispositivo.');
@@ -205,16 +206,75 @@ export class LocationsPage implements OnInit {
     this.presentAlert();
   }
 
+  // private sendToServer(location: Location, key: string) {
+  //   this.locationsProvider.sendToServer(location)
+  //     .then(() => {
+  //       //location.send=true;
+  //       //this.locationsProvider.update(key, location);
+  //       this.presentToast('Upload com sucesso.');
+  //     })
+  //     .catch(() => {
+  //       this.presentToast('Erro ao enviar dados.');
+  //     });
+  // }
+
   private sendToServer(location: Location, key: string) {
-    this.locationsProvider.sendToServer(location)
-      .then(() => {
-        location.send=true;
-        this.locationsProvider.update(key, location);
-        this.presentToast('Upload com sucesso.');
-      })
-      .catch(() => {
-        this.presentToast('Erro ao enviar dados.');
+    if(location.photo.startsWith('file')) {
+      try {
+        this.uploadPhoto(location);
+      }
+      catch (err) {
+        console.log(err);
+      }
+    }
+  }
+  
+  private uploadPhoto(location: Location) {
+    // this.error = null;
+    // this.loading = await this.loadingCtrl.create({
+    //   message: 'Uploading...'
+    // });
+
+    // this.loading.present();
+
+    window['resolveLocalFileSystemURL'](location.photo,
+      entry => {
+        entry['file'](file => this.readFile(file));
       });
+  }
+
+  private readFile(file: any) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const formData = new FormData();
+      const imgBlob = new Blob([reader.result], {type: file.type});
+      formData.append('file', imgBlob, file.name);
+      this.locationsProvider.postData(formData)
+      .then((data) => {
+        data.subscribe((response)=>{
+          console.log(response);
+          //this.respData = JSON.parse(data.response);
+          this.uploadSuccess(response);
+        },(err)=>{
+          console.log(err);
+          this.uploadError(err);
+        });
+      }, (err) => {
+        console.log(err);
+        this.uploadError(err);
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  private uploadSuccess(response:any) {
+    // location.send=true;
+    // this.locationsProvider.update(key, location);
+    this.presentToast('Upload com sucesso.');
+  }
+
+  private uploadError(response:any) {
+    this.presentToast('Erro ao enviar dados.');
   }
 
 }
