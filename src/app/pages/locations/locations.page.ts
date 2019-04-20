@@ -1,15 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AlertController, ToastController } from '@ionic/angular';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationList } from '../../services/locations/locations';
-
+import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-locations',
   templateUrl: './locations.page.html',
-  styleUrls: ['./locations.page.scss']
+  styleUrls: ['./locations.page.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class LocationsPage implements OnInit {
 
@@ -35,6 +36,7 @@ export class LocationsPage implements OnInit {
   constructor(private locationsProvider: LocationsProvider,
     private camera: Camera, public geolocation: Geolocation,
     private toastController: ToastController, private alertCtrl: AlertController,
+    private authService: JwtTokenAuthProvider,
     private route: ActivatedRoute) {
   }
 
@@ -121,6 +123,8 @@ export class LocationsPage implements OnInit {
   createNewLocation() {
     if(!this.model) {
       this.model = new Location();
+      let user=this.authService.getUser();
+      this.model.userid=user.sub;// sub in JWT is user as ID
     }
   }
 
@@ -136,9 +140,6 @@ export class LocationsPage implements OnInit {
 
   takePicture() {
     this.camera.getPicture(this.options).then((imageData) => {
-      // imageData is either a base64 encoded string or a file URI
-      // If it's base64:
-      //this.model.photo = 'data:image/png;base64,' + imageData;
       this.model.photo = imageData;
       this.model.photoURI = (<any>window).Ionic.WebView.convertFileSrc(imageData);
      }).catch((error) => {
@@ -237,18 +238,37 @@ export class LocationsPage implements OnInit {
 
     // this.loading.present();
 
+    // prepare location Object to send to server
+    let jsonLocation:string = this.prepareLocation(location);
+
     window['resolveLocalFileSystemURL'](location.photo,
       entry => {
-        entry['file'](file => this.readFile(file));
+        entry['file']( (file:any) => this.readFile(file,jsonLocation));
       });
   }
 
-  private readFile(file: any) {
+  private cloneLocation(ll:Location){
+    let l:Location=new Location();
+    l.lat=ll.lat;
+    l.lng=ll.lng;
+    l.description=ll.description;
+    l.timeref=ll.timeref;
+    l.userid=ll.userid;
+    return l;
+  }
+  
+  private prepareLocation(location: Location): string {
+    let l = this.cloneLocation(location);
+    return JSON.stringify(l);
+  }
+
+  private readFile(file: any, jsonLocation:string) {
     const reader = new FileReader();
     reader.onloadend = () => {
       const formData = new FormData();
       const imgBlob = new Blob([reader.result], {type: file.type});
       formData.append('file', imgBlob, file.name);
+      formData.append('json_data', jsonLocation);
       this.locationsProvider.postData(formData)
       .then((data) => {
         data.subscribe((response)=>{

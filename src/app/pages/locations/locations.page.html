@@ -22,12 +22,11 @@
           <img [src]="model.photoURI" *ngIf="model && model.photoURI">
         </ion-thumbnail>
         
-        <ion-button block icon-right color="default" (click)="takePicture()" *ngIf="model && !model.photo">
-          Capturar uma foto
-          <ion-icon name="camera"></ion-icon>
+        <ion-button size="small" slot="right" color="default" (click)="takePicture()" *ngIf="model && !model.photo">
+          <ion-icon slot="icon-only" name="camera"></ion-icon>
         </ion-button>
         
-        <ion-button color="medium" size="small" (click)="cropUpload()">
+        <ion-button size="small" slot="right" color="default" (click)="cropUpload()">
           <ion-icon slot="icon-only" name="camera"></ion-icon>
         </ion-button>
       </ion-card-content>

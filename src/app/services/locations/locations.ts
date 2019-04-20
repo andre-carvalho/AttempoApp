@@ -2,11 +2,10 @@ import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-//import { Base64 } from '@ionic-native/base64/ngx';
 import { Crop } from '@ionic-native/crop/ngx';
 import { ImagePicker } from '@ionic-native/image-picker/ngx';
 import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer/ngx';
-import { catchError, finalize } from 'rxjs/operators';
+
 
 
 /*
@@ -225,6 +224,7 @@ export class Location {
   photoURI: string;
   timeref: Date;
   send: boolean;
+  userid: number;
 }
 
 export class LocationList {
