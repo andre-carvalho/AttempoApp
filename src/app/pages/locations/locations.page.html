@@ -8,7 +8,7 @@
         <ion-icon name="options"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Lista de lugares</ion-title>
+    <ion-title>Lista de Ocorrências</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -22,15 +22,14 @@
           <img [src]="model.photoURI" *ngIf="model && model.photoURI">
         </ion-thumbnail>
         
-        <ion-button size="small" slot="right" color="default" (click)="takePicture()" *ngIf="model && !model.photo">
+        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="takePicture(1)" *ngIf="model && !model.photo">
           <ion-icon slot="icon-only" name="camera"></ion-icon>
         </ion-button>
         
-        <!--
-        <ion-button size="small" slot="right" color="default" (click)="cropUpload()">
-          <ion-icon slot="icon-only" name="camera"></ion-icon>
+        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="takePicture(0)" *ngIf="model && !model.photo">
+          <ion-icon slot="icon-only" name="images"></ion-icon>
         </ion-button>
-        -->
+      
       </ion-card-content>
       
       <ion-card-content>
@@ -41,7 +40,7 @@
       <ion-card-content>
         <p>Lat/Long( <span [innerHTML]="model.lat"></span>, <span [innerHTML]="model.lng"></span> )</p>
 
-        <ion-button icon-left clear slot="end" (click)="save()">
+        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="save()">
           <ion-icon name="done-all"></ion-icon> Salvar
         </ion-button>
       </ion-card-content>
@@ -62,14 +61,19 @@
       <ion-card-content>
         <p>Lat/Long( {{ item.location.lat }} , {{ item.location.lng }} )</p>
 
-        <ion-button icon-left clear slot="end" (click)="removeLocation(item)">
+        <ion-button fill="clear" size="small" slot="end" color="dark" (click)="removeLocation(item)">
           <ion-icon name="trash"></ion-icon>
         </ion-button>
-        <ion-button icon-left clear slot="end" (click)="sendDataToServer(item)" *ngIf="!item.location.send">
+        <ion-button fill="clear" size="small" slot="end" color="dark" (click)="sendDataToServer(item)" *ngIf="!item.location.send">
           <ion-icon name="cloud-upload"></ion-icon>
         </ion-button>
+        <ion-button fill="clear" size="small" slot="end" color="dark" *ngIf="item.location.send">
+          <ion-icon name="cloud-done"></ion-icon>
+        </ion-button>
       </ion-card-content>
-      
+      <ion-card-content>
+        <ion-progress-bar type="indeterminate" *ngIf="item.location.sending"></ion-progress-bar>
+      </ion-card-content>
     </ion-card>
   </ion-list>
 

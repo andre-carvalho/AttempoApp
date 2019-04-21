@@ -70,12 +70,12 @@ export class LocationsProvider {
 
   public async getAll() {
 
-    let locations: LocationList[] = [];
+    let locations: LocationItem[] = [];
 
     try {
       await this.storage.forEach((value: Location, key: string, iterationNumber: Number) => {
         if (this.keys.indexOf(key)<0) {
-          let location = new LocationList();
+          let location = new LocationItem();
           location.key = key;
           location.location = value;
           locations.push(location);
@@ -110,11 +110,12 @@ export class Location {
   photo: string;
   photoURI: string;
   timeref: Date;
-  send: boolean;
+  send: boolean=false;
+  sending: boolean=false;
   userid: number;
 }
 
-export class LocationList {
+export class LocationItem {
   key: string;
   location: Location;
 }

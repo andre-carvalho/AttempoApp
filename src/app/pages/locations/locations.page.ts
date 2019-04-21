@@ -2,9 +2,10 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AlertController, ToastController } from '@ionic/angular';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
-import { LocationsProvider, Location, LocationList } from '../../services/locations/locations';
+import { LocationsProvider, Location, LocationItem } from '../../services/locations/locations';
 import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
 import { ActivatedRoute } from '@angular/router';
+import { throwError } from 'rxjs';
 
 @Component({
   selector: 'app-locations',
@@ -14,7 +15,7 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class LocationsPage implements OnInit {
 
-  locations: LocationList[];
+  locations: LocationItem[];
   model: Location;
   key: string;
   public currentLat: any;
@@ -108,8 +109,7 @@ export class LocationsPage implements OnInit {
       this.reloadLocations();
 
       if(this.startCamera) {
-        console.log('Start camera after init page...');
-        this.takePicture();
+        this.takePicture(0);
       }
       if(!this.currentLat || !this.currentLng) {
         this.catchLocation();
@@ -138,7 +138,7 @@ export class LocationsPage implements OnInit {
     }
   }
 
-  removeLocation(item: LocationList) {
+  removeLocation(item: LocationItem) {
     this.locationsProvider.remove(item.key)
       .then(() => {
         // removing from array of itens
@@ -148,7 +148,19 @@ export class LocationsPage implements OnInit {
       })
   }
 
-  takePicture() {
+  /**
+   * Take or choose a picture from one provided sources.
+   * @param source The number base on picture source types from Camera.
+   * PHOTOLIBRARY: 0
+   * CAMERA: 1
+   * SAVEDPHOTOALBUM: 2
+   */
+  takePicture(source:number) {
+    if(source<0 || source>2){
+      console.log('The parameter "source" is out of range.');
+      throw Error('The parameter "source" is out of range.');
+    }
+    this.options.sourceType=source;
     this.camera.getPicture(this.options).then((imageData) => {
       this.model.photo = imageData;
       this.model.photoURI = (<any>window).Ionic.WebView.convertFileSrc(imageData);
@@ -198,7 +210,7 @@ export class LocationsPage implements OnInit {
     return this.locationsProvider.insert(this.model);
   }
 
-  public sendDataToServer(item: LocationList) {
+  public sendDataToServer(item: LocationItem) {
     
     if(item == undefined) {
       let l = this.locations.length;
@@ -218,27 +230,23 @@ export class LocationsPage implements OnInit {
   }
 
   private sendToServer(location: Location, key: string) {
+    location.sending=true;
     if(location.photo && location.photo.startsWith('file')) {
       try {
-        this.uploadPhoto(location, key);
+        this.uploadData(location, key);
       }
       catch (err) {
+        location.sending=false;
         this.presentToast('Tentativa de envio falhou.');
         console.log(err);
       }
     }else{
+      location.sending=false;
       this.showAlert('Ocorrências sem foto não podem ser enviadas ao servidor', 'Atenção');
     }
   }
   
-  private uploadPhoto(location: Location, key: string) {
-    // this.error = null;
-    // this.loading = await this.loadingCtrl.create({
-    //   message: 'Uploading...'
-    // });
-
-    // this.loading.present();
-
+  private uploadData(location: Location, key: string) {
     window['resolveLocalFileSystemURL'](location.photo,
       entry => {
         entry['file']( (file:any) => this.readFile(file,location,key));
@@ -274,10 +282,10 @@ export class LocationsPage implements OnInit {
         data.subscribe((response)=>{
           this.uploadSuccess(response, location, key);
         },(err)=>{
-          this.uploadError(err);
+          this.uploadError(err, location);
         });
       }, (err) => {
-        this.uploadError(err);
+        this.uploadError(err, location);
       });
     };
     reader.readAsArrayBuffer(file);
@@ -286,13 +294,16 @@ export class LocationsPage implements OnInit {
   private uploadSuccess(response:any, location:Location, key: string) {
     console.log(response);
     if(response.status=='completed') {
+      location.sending=false;
       location.send=true;
       this.locationsProvider.update(key, location);
       this.presentToast('Upload com sucesso.');
     }
   }
 
-  private uploadError(error:any) {
+  private uploadError(error:any, location:Location) {
+    location.sending=false;
+    location.send=false;
     console.log(error);
     this.presentToast('Erro ao enviar dados.');
   }

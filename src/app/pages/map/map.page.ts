@@ -3,7 +3,7 @@ import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
-import { LocationsProvider, LocationList } from '../../services/locations/locations';
+import { LocationsProvider, LocationItem } from '../../services/locations/locations';
 import { environment } from '../../../environments/environment';
 
 declare var google: any;
@@ -17,7 +17,7 @@ declare var google: any;
 export class MapPage implements OnInit {
 
   @ViewChild('map_canvas') map_canvas:any;
-  locations: LocationList[];
+  locations: LocationItem[];
   map: any;
   markers: any;
   watchLocation: any;
@@ -270,7 +270,7 @@ export class MapPage implements OnInit {
       });
   }
 
-  displaySavedMarkers(locations: LocationList[]) {
+  displaySavedMarkers(locations: LocationItem[]) {
     this.savedLocations = [];
     let color = {local:"FE7569",remote:"5cf5e0"};
     /**
