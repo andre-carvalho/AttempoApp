@@ -21,17 +21,15 @@ export class LocationsPage implements OnInit {
   public currentLng: any;
   public startCamera: any;
   options: CameraOptions = {
-    quality: 80,
+    quality: 90,
     destinationType: this.camera.DestinationType.FILE_URI,
     sourceType: this.camera.PictureSourceType.CAMERA, //Source is camera
     allowEdit: false, // Allow user to edit before saving
     mediaType: this.camera.MediaType.PICTURE,
     encodingType: this.camera.EncodingType.JPEG, // Save as JPEG
-    saveToPhotoAlbum: true, // Album save opton
+    saveToPhotoAlbum: true, // Album save option
     correctOrientation: true // Camera orientation  
   };
-  // targetWidth: 300,
-  // targetHeight: 300,
 
   constructor(private locationsProvider: LocationsProvider,
     private camera: Camera, public geolocation: Geolocation,
@@ -43,14 +41,27 @@ export class LocationsPage implements OnInit {
   async presentToast(message: string) {
     const toast = await this.toastController.create({
       message: message,
-      duration: 1500,
+      duration: 1700,
       position: 'bottom',
       showCloseButton: false,
     });
     toast.present();
   }
 
-  async presentAlert() {
+  /**
+   * To display alerts with simple message.
+   * @param msg Message string
+   */
+  private async showAlert(msg: string, headerMsg: string) {
+    const alert = await this.alertCtrl.create({
+      message: msg,
+      header: headerMsg,
+      buttons: ['OK']
+    });
+    alert.present();
+  }
+
+  async presentConfigAlert() {
     const alert = await this.alertCtrl.create({
       header: 'Serviço para envio de dados',
       inputs: [
@@ -64,7 +75,7 @@ export class LocationsPage implements OnInit {
         {
           text: 'Cancelar',
           role: 'cancel',
-          handler: data => {
+          handler: () => {
             console.log('Cancel clicked');
           }
         },
@@ -86,9 +97,8 @@ export class LocationsPage implements OnInit {
 
   ngOnInit() {
     this.route.queryParams
-      //.filter(params => params.currentLat)
       .subscribe(params => {
-        console.log(params); // print all prarameters
+        console.log(params); // print all parameters
 
         this.currentLat = params.currentLat;
         this.currentLng = params.currentLng;
@@ -134,7 +144,7 @@ export class LocationsPage implements OnInit {
         // removing from array of itens
         var index = this.locations.indexOf(item);
         this.locations.splice(index, 1);
-        this.presentToast('Local removido.');
+        this.presentToast('Ocorrência removida.');
       })
   }
 
@@ -148,7 +158,7 @@ export class LocationsPage implements OnInit {
      });
   }
 
-  prepareHeader(img) {
+  prepareHeader(img:string) {
     if(img.startsWith('file')) {
       return img;
     }else{
@@ -161,8 +171,8 @@ export class LocationsPage implements OnInit {
 
     this.geolocation.getCurrentPosition(locationOptions).then((position) => {
 
-      this.model.lat = +(position.coords.latitude).toFixed(4);
-      this.model.lng = +(position.coords.longitude).toFixed(4);
+      this.model.lat = +(position.coords.latitude).toFixed(6);
+      this.model.lng = +(position.coords.longitude).toFixed(6);
 
     }).catch((error) => {
       console.log('Error getting location', error);
@@ -173,14 +183,14 @@ export class LocationsPage implements OnInit {
   public save() {
     this.saveLocation()
       .then(() => {
-        this.presentToast('Local salvo.');
+        this.presentToast('Ocorrência gravada.');
         this.model=undefined;
         this.createNewLocation();
         this.reloadLocations();
         this.catchLocation();
       })
       .catch(() => {
-        this.presentToast('Erro ao salvar o local.');
+        this.presentToast('Erro ao gravar a ocorrência.');
       });
   }
 
@@ -204,33 +214,24 @@ export class LocationsPage implements OnInit {
   }
 
   public setServerURL() {
-    this.presentAlert();
+    this.presentConfigAlert();
   }
 
-  // private sendToServer(location: Location, key: string) {
-  //   this.locationsProvider.sendToServer(location)
-  //     .then(() => {
-  //       //location.send=true;
-  //       //this.locationsProvider.update(key, location);
-  //       this.presentToast('Upload com sucesso.');
-  //     })
-  //     .catch(() => {
-  //       this.presentToast('Erro ao enviar dados.');
-  //     });
-  // }
-
   private sendToServer(location: Location, key: string) {
-    if(location.photo.startsWith('file')) {
+    if(location.photo && location.photo.startsWith('file')) {
       try {
-        this.uploadPhoto(location);
+        this.uploadPhoto(location, key);
       }
       catch (err) {
+        this.presentToast('Tentativa de envio falhou.');
         console.log(err);
       }
+    }else{
+      this.showAlert('Ocorrências sem foto não podem ser enviadas ao servidor', 'Atenção');
     }
   }
   
-  private uploadPhoto(location: Location) {
+  private uploadPhoto(location: Location, key: string) {
     // this.error = null;
     // this.loading = await this.loadingCtrl.create({
     //   message: 'Uploading...'
@@ -238,12 +239,9 @@ export class LocationsPage implements OnInit {
 
     // this.loading.present();
 
-    // prepare location Object to send to server
-    let jsonLocation:string = this.prepareLocation(location);
-
     window['resolveLocalFileSystemURL'](location.photo,
       entry => {
-        entry['file']( (file:any) => this.readFile(file,jsonLocation));
+        entry['file']( (file:any) => this.readFile(file,location,key));
       });
   }
 
@@ -262,8 +260,10 @@ export class LocationsPage implements OnInit {
     return JSON.stringify(l);
   }
 
-  private readFile(file: any, jsonLocation:string) {
+  private readFile(file: any, location:Location, key: string) {
     const reader = new FileReader();
+    // prepare location Object to send to server
+    const jsonLocation:string = this.prepareLocation(location);
     reader.onloadend = () => {
       const formData = new FormData();
       const imgBlob = new Blob([reader.result], {type: file.type});
@@ -272,28 +272,28 @@ export class LocationsPage implements OnInit {
       this.locationsProvider.postData(formData)
       .then((data) => {
         data.subscribe((response)=>{
-          console.log(response);
-          //this.respData = JSON.parse(data.response);
-          this.uploadSuccess(response);
+          this.uploadSuccess(response, location, key);
         },(err)=>{
-          console.log(err);
           this.uploadError(err);
         });
       }, (err) => {
-        console.log(err);
         this.uploadError(err);
       });
     };
     reader.readAsArrayBuffer(file);
   }
 
-  private uploadSuccess(response:any) {
-    // location.send=true;
-    // this.locationsProvider.update(key, location);
-    this.presentToast('Upload com sucesso.');
+  private uploadSuccess(response:any, location:Location, key: string) {
+    console.log(response);
+    if(response.status=='completed') {
+      location.send=true;
+      this.locationsProvider.update(key, location);
+      this.presentToast('Upload com sucesso.');
+    }
   }
 
-  private uploadError(response:any) {
+  private uploadError(error:any) {
+    console.log(error);
     this.presentToast('Erro ao enviar dados.');
   }
 

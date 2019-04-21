@@ -2,7 +2,7 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth';
-import { AlertController } from '@ionic/angular'
+import { AlertController, ToastController } from '@ionic/angular'
 
 @Component({
   selector: 'app-home',
@@ -17,6 +17,7 @@ export class HomePage implements OnInit {
   constructor(private router: Router,
     private authService: JwtTokenAuthProvider,
     private formBuilder: FormBuilder,
+    private toastController: ToastController,
     private alertController: AlertController) {
   }
 
@@ -32,16 +33,23 @@ export class HomePage implements OnInit {
           serverAuthorize.subscribe( (resp:any) => {
             if(resp && resp.status){
               this.goToBurnered();
+            }else{
+              this.presentToast('Autenticação expirou, faça login.');
             }
+          }, (error)=> {
+            if(error===101){// missing token
+              this.presentToast('Faça login para iniciar.');
+            }
+            console.log(error);
           });
         }
       }, (HTTPCodeError) => {
         // TODO: disable the gif loader.
-        if (HTTPCodeError === 401) {
-          this.showAlert('A comunicação com o servidor falhou.', 'Error');
+        if (HTTPCodeError === 401) {//HTTP 401 Unauthorized
+          this.showAlert('Não autorizado.', 'Falha');
         }
         if (HTTPCodeError === 403) {
-          this.showAlert('Autorização negada, faça login.', 'Error');
+          this.presentToast('Autorização negada, faça login.');
         }
         console.log(HTTPCodeError);
       });
@@ -58,15 +66,17 @@ export class HomePage implements OnInit {
       (loginstatus:any) => {
         if(loginstatus.status==='success'){
           this.goToBurnered();
+        }else{
+          this.presentToast('O login falhou.');
         }
       },
       err => {
         if (err.code === 401) {
-          this.showAlert('A comunicação com o servidor falhou.', 'Error');
+          this.presentToast('A comunicação com o servidor falhou.');
         }else if (err.code === 403) {
-          this.showAlert('Autorização negada, faça login.', 'Error');
+          this.presentToast('Autorização negada, faça login.');
         }else{
-          this.showAlert('Falha na comunicação com o servidor..', 'Error');
+          this.presentToast('Falha na comunicação com o servidor.');
         }
       }
     );
@@ -94,13 +104,27 @@ export class HomePage implements OnInit {
    * To display alerts with simple message.
    * @param msg Message string
    */
-  private showAlert(msg: string, headerMsg: string) {
-    let alert = this.alertController.create({
+  private async showAlert(msg: string, headerMsg: string) {
+    const alert = await this.alertController.create({
       message: msg,
       header: headerMsg,
       buttons: ['OK']
     });
-    alert.then(alert => alert.present());
+    alert.present();
+  }
+
+ /**
+   * To display Toast messages with simple text.
+   * @param msg Message string
+   */
+  private async presentToast(message: string) {
+    const toast = await this.toastController.create({
+      message: message,
+      duration: 1700,
+      position: 'bottom',
+      showCloseButton: false,
+    });
+    toast.present();
   }
 
 }

@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Storage } from '@ionic/storage';
 import { tap, catchError, map } from 'rxjs/operators';
-import { BehaviorSubject, throwError } from 'rxjs';
+import { BehaviorSubject, throwError, Observable } from 'rxjs';
 
 // The name used as key the token into localstarage
 const TOKEN_KEY = 'access_token';
@@ -79,7 +79,6 @@ export class JwtTokenAuthProvider {
   }
  
   logout() {
-    //if(promise){catchError(e => {
     this.serverLogout().subscribe( (e:any) => {
       let status = e.status;
       if (status === "success") {
@@ -114,30 +113,26 @@ export class JwtTokenAuthProvider {
   /**
    * Asks for server if token still valid.
    */
-  isAuthorized() {
-    return this.storage.get(TOKEN_KEY).then(token => {
-      if (token) {
-        let options = new HttpHeaders(
-          {
-            'Content-Type':'application/json',
-            'Authorization': 'Bearer '+token
-          }
-        );
-        //options.append('Authorization', token);
-        return this.http.get(`${this.url}/isAuthorized`, {headers:options}).pipe(
-          map(data => {
-            if (data === null) return throwError("null data");
-            return data;
-          }),
-          catchError(e => {
-            throw throwError(e);
-          })
-        );
-      }else{
-        // if don't have token, change authentication control to false.
-        this.authenticationState.next(false);
-      }
-    });
+  async isAuthorized() {
+    const token = await this.storage.get(TOKEN_KEY);
+    if (token) {
+      let options = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      });
+      return this.http.get(`${this.url}/isAuthorized`, { headers: options }).pipe(map(data => {
+        if (data === null)
+          return throwError("null data");
+        return data;
+      }), catchError(e => {
+        throw throwError(e);
+      }));
+    }else {
+      // if don't have token, change authentication control to false.
+      this.authenticationState.next(false);
+      // new app installed or login was never performed.
+      return throwError(101);// missing token
+    }
     
   }
    
@@ -147,5 +142,16 @@ export class JwtTokenAuthProvider {
 
   getUser() {
     return this.user;
+  }
+
+  async getToken() {
+    if (this.isAuthenticated()){
+      const token = await this.storage.get(TOKEN_KEY);
+      if (token) {
+        return token;
+      }
+    }else{
+      return false;
+    }
   }
 }
