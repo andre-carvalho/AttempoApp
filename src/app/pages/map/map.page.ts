@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { MenuController } from '@ionic/angular';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
@@ -34,7 +35,8 @@ export class MapPage implements OnInit {
     private location: Location,
     private router: Router,
     public geolocation: Geolocation,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute,
+    private menu: MenuController) {
     
     /*load google map script dynamically if not loaded yet */
     if(!document.getElementById('googleMap')) {
@@ -76,6 +78,11 @@ export class MapPage implements OnInit {
     if(this.initializeMap()){
       this.addLocation();
     }
+  }
+
+  openConfig() {
+    this.menu.enable(true, 'mapConfig');
+    this.menu.open('mapConfig');
   }
 
   /**
@@ -134,6 +141,11 @@ export class MapPage implements OnInit {
     this.markers.push(marker);
 
     google.maps.event.addListener(marker, 'click', () => {
+
+      if (marker.getInfoModal){
+        marker.getInfoModal().close();
+        return;
+      }
       let lat = marker.getPosition().lat();
       let lng = marker.getPosition().lng();
 

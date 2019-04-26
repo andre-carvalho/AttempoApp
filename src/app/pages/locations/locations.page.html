@@ -1,6 +1,9 @@
 <ion-header>
   <ion-toolbar>
-    <ion-buttons end>
+    <ion-buttons slot="start">
+      <ion-back-button icon="arrow-round-back" defaultHref="burnered"></ion-back-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
       <ion-button (click)="sendDataToServer()">
         <ion-icon name="cloud-upload"></ion-icon>
       </ion-button>

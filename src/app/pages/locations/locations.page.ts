@@ -5,7 +5,6 @@ import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationItem } from '../../services/locations/locations';
 import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
 import { ActivatedRoute } from '@angular/router';
-import { throwError } from 'rxjs';
 
 @Component({
   selector: 'app-locations',
@@ -101,9 +100,9 @@ export class LocationsPage implements OnInit {
       .subscribe(params => {
         console.log(params); // print all parameters
 
-        this.currentLat = params.currentLat;
-        this.currentLng = params.currentLng;
-        this.startCamera = params.startCamera;
+        this.currentLat = +params.currentLat;
+        this.currentLng = +params.currentLng;
+        this.startCamera = params.startCamera==="true";
    
       this.createNewLocation();
       this.reloadLocations();

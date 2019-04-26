@@ -1,6 +1,10 @@
 <ion-header>
   <ion-toolbar>
-    <ion-buttons slot="end">
+    <ion-buttons slot="start">
+      <ion-back-button icon="arrow-round-back" defaultHref="burnered"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Mapa</ion-title>
+    <!-- <ion-buttons slot="end">
       <ion-button style="visibility: hidden;" id="infowindowhidden" (click)="useCurrentCoords()"></ion-button>
       <ion-button icon-only (click)="reloadLocations()">
         <ion-icon name="eye"></ion-icon>Show
@@ -8,11 +12,44 @@
       <ion-button icon-only [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
         <ion-icon name="locate"></ion-icon>Tracking
       </ion-button>
-    </ion-buttons>
-    <ion-icon name="arrow-round-back" (click)="goBack()"></ion-icon>
-    <ion-title>Mapa</ion-title>
+    </ion-buttons> -->
+    <ion-buttons slot="end">
+      <ion-button (click)="openConfig()">
+        <ion-icon name="options"></ion-icon>
+      </ion-button>
+      <ion-button style="visibility: hidden;" id="infowindowhidden" (click)="useCurrentCoords()"></ion-button>
+    </ion-buttons>  
   </ion-toolbar>
 </ion-header>
+
+<ion-menu side="end" menuId="mapConfig">
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>Configurações</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list>
+      <ion-item>
+        <ion-button (click)="useCurrentCoords()">
+          <ion-icon name="pin"></ion-icon> Usar coordenada atual
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-button (click)="reloadLocations()">
+          <ion-icon name="eye"></ion-icon> Minhas ocorrências
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-button [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
+          <ion-icon name="locate"></ion-icon> Tracking
+        </ion-button>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<ion-router-outlet main></ion-router-outlet>
 
 <ion-content padding>
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
