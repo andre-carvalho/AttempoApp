@@ -1,7 +1,7 @@
 <ion-header>
 
   <ion-toolbar>
-    <ion-title>Alertas</ion-title>
+    <ion-title>Relatar ocorrência</ion-title>
   </ion-toolbar>
 
 </ion-header>
@@ -10,68 +10,56 @@
 <ion-content padding>
     <ion-grid>
       <ion-row>
-        <ion-col size="12" class="burnedtext">
-          TerraMA - ALERTAS
+        <ion-col size="12" class="headertext">
+          Instruções
         </ion-col>
       </ion-row>
       <ion-row>
         <ion-col size="1"></ion-col>
         <ion-col size="10" class="text1">
-          Aplicativo destinado à coleta de dados em campo com a finalidade de geração de alertas baseados em observações de eventos que possam interferir na qualidade do ar, qualidade da água, riscos em barragens de rejeito em área de mineração, incêndios florestais, movimentos de massa do tipo escorregamentos e corridas de lama, enchentes entre outros.
+          Para relatar uma ocorrência:
+          <ul>
+            <li>Definir um local usando o GPS do seu Smartfone</li>
+            <li>Capturar uma foto do local que represente o evento informado</li>
+            <li>Fazer uma breve descrição</li>
+            <li>Salvar as informações</li>
+            <li>Revisar e nos enviar</li>
+          </ul>
         </ion-col>
         <ion-col size="1"></ion-col>
       </ion-row>
       <ion-row>
         <ion-col size="1"></ion-col>
-        <ion-col size="10" class="text2">
-          Agora você pode nos ajudar a identificar estes eventos e agilizar as ações de mitigação dos efeitos.
+        <ion-col size="10" class="text1">
+          Utilize o menu abaixo para começar.
         </ion-col>
         <ion-col size="1"></ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col size="12">
-          <ion-label class="textred">Observou algo de anormal?</ion-label>
-          <ion-label class="textred">Denuncie!</ion-label>
-        </ion-col>
       </ion-row>
     </ion-grid>
-
-    <ion-fab bottom center>
-      <button ion-fab (click)="goToCamera()">
-        <ion-icon name="camera"></ion-icon>
-      </button>
-    </ion-fab>
-
   </ion-content>
+
   <ion-footer>
     <ion-toolbar>
       <ion-grid>
         <ion-row>
-          <ion-col size="1"></ion-col>
-          <ion-col size="2">
-            <button icon-only (click)="goToInfo()">
-              <ion-icon name="information-circle"></ion-icon>
-            </button>
+          <ion-col size="4" class="buttontext">
+            <ion-button expand="block" (click)="goToCamera()">
+              <ion-icon name="camera"></ion-icon>
+            </ion-button>
+            Capturar foto
           </ion-col>
-          <ion-col size="2">
-            <button icon-only (click)="goToMap()">
+          <ion-col size="4" class="buttontext">
+            <ion-button expand="block" (click)="goToMap()">
               <ion-icon name="pin"></ion-icon>
-            </button>
+            </ion-button>
+            Ajustar local
           </ion-col>
-          <ion-col size="2">
-          </ion-col>
-          <ion-col size="2">
-            <!--(click)="goToEdit()">-->
-            <ion-button icon-only expand="block" routerLink="/locations" routerDirection="root">
+          <ion-col size="4" class="buttontext">
+            <ion-button expand="block" (click)="goToLocations()">
               <ion-icon name="list-box"></ion-icon>
             </ion-button>
+            Minha lista
           </ion-col>
-          <ion-col size="2">
-            <button icon-only (click)="goToEdit()">
-              <ion-icon name="cloud-upload"></ion-icon>
-            </button>
-          </ion-col>
-          <ion-col size="1"></ion-col>
         </ion-row>
       </ion-grid>
     </ion-toolbar>

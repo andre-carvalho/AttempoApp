@@ -13,30 +13,43 @@ import { AlertController, ToastController } from '@ionic/angular'
 export class HomePage implements OnInit {
   
   private credentialsForm:FormGroup;
+  private waitingResponse:boolean;
 
   constructor(private router: Router,
     private authService: JwtTokenAuthProvider,
     private formBuilder: FormBuilder,
     private toastController: ToastController,
     private alertController: AlertController) {
+      this.waitingResponse=false;
   }
 
   ngOnInit() {
     // TODO: enable the gif loader.
 
     if(this.authService.isAuthenticated()){
+      // disable progress bar
+      this.waitingResponse=false;
+
       this.goToBurnered();
     }else{
+      // enable progress bar
+      this.waitingResponse=true;
 
       this.authService.isAuthorized().then( (serverAuthorize) => {
         if(serverAuthorize){
           serverAuthorize.subscribe( (resp:any) => {
+            // disable progress bar
+            this.waitingResponse=false;
+
             if(resp && resp.status){
               this.goToBurnered();
             }else{
               this.presentToast('Autenticação expirou, faça login.');
             }
           }, (error)=> {
+            // disable progress bar
+            this.waitingResponse=false;
+
             if(error===101){// missing token
               this.presentToast('Faça login para iniciar.');
             }
@@ -44,7 +57,9 @@ export class HomePage implements OnInit {
           });
         }
       }, (HTTPCodeError) => {
-        // TODO: disable the gif loader.
+        // disable progress bar
+        this.waitingResponse=false;
+
         if (HTTPCodeError === 401) {//HTTP 401 Unauthorized
           this.showAlert('Não autorizado.', 'Falha');
         }
@@ -62,8 +77,14 @@ export class HomePage implements OnInit {
   }
 
   onSubmit() {
+    // enable progress bar
+    this.waitingResponse=true;
+
     this.authService.login(this.credentialsForm.value).subscribe(
       (loginstatus:any) => {
+        // disable progress bar
+        this.waitingResponse=false;
+
         if(loginstatus.status==='success'){
           this.goToBurnered();
         }else{
@@ -71,6 +92,9 @@ export class HomePage implements OnInit {
         }
       },
       err => {
+        // disable progress bar
+        this.waitingResponse=false;
+
         if (err.code === 401) {
           this.presentToast('A comunicação com o servidor falhou.');
         }else if (err.code === 403) {
@@ -87,12 +111,19 @@ export class HomePage implements OnInit {
   }
 
   register() {
+    // enable progress bar
+    this.waitingResponse=true;
+
     this.authService.register(this.credentialsForm.value).subscribe( (registerstatus: any) => {
+      // disable progress bar
+      this.waitingResponse=false;
+      
       console.log('Message:'+registerstatus.message +'\nStatus:'+ registerstatus.status);
       // TODO: When server API already send the email to new registered Users 
       // them we redirect user to the Information page tell they about the need of validate email.
 
       // Call Login to automatically login the new user
+      // TODO: Disable this because we send a e-mail validation to verify the email account
       this.authService.login(this.credentialsForm.value).subscribe( (loginstatus:any) => {
         console.log('Message:' + loginstatus.message + '\nStatus:' +loginstatus.status);
         this.goToBurnered();
