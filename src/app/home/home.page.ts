@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { JwtTokenAuthProvider } from '../services/jwt-token-auth/jwt-token-auth';
 import { AlertController, ToastController } from '@ionic/angular'
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -24,50 +25,77 @@ export class HomePage implements OnInit {
   }
 
   ngOnInit() {
-    // TODO: enable the gif loader.
-
-    if(this.authService.isAuthenticated()){
-      // disable progress bar
-      this.waitingResponse=false;
-
-      this.goToBurnered();
-    }else{
-      // enable progress bar
-      this.waitingResponse=true;
-
-      this.authService.isAuthorized().then( (serverAuthorize) => {
-        if(serverAuthorize){
-          serverAuthorize.subscribe( (resp:any) => {
-            // disable progress bar
-            this.waitingResponse=false;
-
-            if(resp && resp.status){
-              this.goToBurnered();
-            }else{
-              this.presentToast('Autenticação expirou, faça login.');
-            }
-          }, (error)=> {
-            // disable progress bar
-            this.waitingResponse=false;
-
-            if(error===101){// missing token
-              this.presentToast('Faça login para iniciar.');
-            }
-            console.log(error);
-          });
-        }
-      }, (HTTPCodeError) => {
+    // enable progress bar
+    this.waitingResponse=true;
+    const aPromise = this.authService.isAuthenticated();
+    if(aPromise){
+      aPromise.then( (response:boolean)=> {
         // disable progress bar
         this.waitingResponse=false;
-
-        if (HTTPCodeError === 401) {//HTTP 401 Unauthorized
-          this.showAlert('Não autorizado.', 'Falha');
+        if(response) {
+          this.goToBurnered();
+        }else{
+          this.presentToast('Faça login para iniciar.');
         }
-        if (HTTPCodeError === 403) {
-          this.presentToast('Autorização negada, faça login.');
-        }
-        console.log(HTTPCodeError);
+      },(reason:any)=>{
+        // disable progress bar
+        this.waitingResponse=false;
+        this.presentToast('Faça login para iniciar.');
       });
+    }else{
+      // disable progress bar
+      this.waitingResponse=false;
+      this.presentToast('Faça login para iniciar.');
+
+      // this.authService.isAuthorized().then( (serverAuthorize) => {
+      //   if(serverAuthorize){
+      //     serverAuthorize.subscribe( (resp:any) => {
+      //       // disable progress bar
+      //       this.waitingResponse=false;
+
+      //       if(resp && resp.status){
+      //         this.goToBurnered();
+      //       }else{
+      //         this.presentToast('Autenticação expirou, faça login.');
+      //       }
+      //     }, (error)=> {
+      //       if(error instanceof Observable){
+      //         error.subscribe( (resp:any)=>{
+      //           // disable progress bar
+      //           this.waitingResponse=false;
+      //           console.log(resp);
+      //         },
+      //         (err)=>{
+      //           // disable progress bar
+      //           this.waitingResponse=false;
+      //           if(err.name==="HttpErrorResponse"){
+      //             this.presentToast('Não obteve resposta do servidor de autenticação.');
+      //           }
+      //           console.log(err);
+      //         });
+      //       }else{
+      //         // disable progress bar
+      //         this.waitingResponse=false;
+
+      //         if(error===101){// missing token
+      //           this.presentToast('Faça login para iniciar.');
+      //         }
+      //         console.log(error);
+      //       }
+      //     });
+      //   }
+      // }, (HTTPCodeError) => {
+      //   // disable progress bar
+      //   this.waitingResponse=false;
+
+      //   if (HTTPCodeError === 401) {//HTTP 401 Unauthorized
+      //     this.showAlert('Não autorizado.', 'Falha');
+      //   }
+      //   if (HTTPCodeError === 403) {
+      //     this.presentToast('Autorização negada, faça login.');
+      //   }
+      //   console.log(HTTPCodeError);
+      // });
     }
 
     this.credentialsForm = this.formBuilder.group({

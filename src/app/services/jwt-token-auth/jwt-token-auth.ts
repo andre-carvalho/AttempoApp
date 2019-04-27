@@ -14,31 +14,33 @@ const TOKEN_KEY = 'access_token';
 })
 export class JwtTokenAuthProvider {
  
-  private url:string = "http://192.168.1.121:8000";
+  private url: string = "http://192.168.1.121:8000";
   private user: any = null;
+  private isChecked: boolean = false;
   private authenticationState: BehaviorSubject<boolean> = new BehaviorSubject(false);
  
   constructor(private http: HttpClient, private helper: JwtHelperService, private storage: Storage,
     private plt: Platform) {
-    this.plt.ready().then(() => {
-      this.checkToken();
-    });
   }
  
-  checkToken() {
-    this.storage.get(TOKEN_KEY).then(token => {
+  async checkToken() {
+    const token = await this.getToken();
       if (token) {
         let decoded = this.helper.decodeToken(token);
         let isExpired = this.helper.isTokenExpired(token);
- 
+        this.isChecked=true;
         if (!isExpired) {
           this.user = decoded;
           this.authenticationState.next(true);
+          return true;
         } else {
           this.storage.remove(TOKEN_KEY);
+          return false;
         }
+      }else{
+        this.isChecked=true;
+        return false;
       }
-    });
   }
  
   register(credentials: string) {
@@ -78,31 +80,35 @@ export class JwtTokenAuthProvider {
       );
   }
  
-  logout() {
-    this.serverLogout().subscribe( (e:any) => {
-      let status = e.status;
-      if (status === "success") {
-        this.storage.remove(TOKEN_KEY).then(() => {
-          this.authenticationState.next(false);
-        });
-      }
-    }, (e:any) => {
-      this.authenticationState.next(false);
-      throw throwError(e);
-    });
+  async logout() {
+    const logout = await this.serverLogout();
+    if(logout) {
+      logout.subscribe( (e:any)=>{
+        let status = e.status;
+        if (status === "success") {
+          this.storage.remove(TOKEN_KEY).then(() => {
+            this.authenticationState.next(false);
+          });
+        }else{
+          throw throwError(e);
+        }
+      }, (e:any) => {
+        this.authenticationState.next(false);
+        throw throwError(e);
+      });
+    }
   }
 
-  serverLogout() {
+  async serverLogout() {
     var options = new HttpHeaders(
       {'Content-Type':'application/json'}
     );
-    this.storage.get(TOKEN_KEY).then(token => {
-      if (token) {
-        options.append('Authorization', token);
-      }else{
-        this.authenticationState.next(false);
-      }
-    });
+    const token = await this.getToken();
+    if (token) {
+      options.append('Authorization', token);
+    }else{
+      this.authenticationState.next(false);
+    }
     return this.http.get(`${this.url}/logout`, {headers:options}).pipe(
       catchError(e => {
         throw throwError(e);
@@ -114,7 +120,7 @@ export class JwtTokenAuthProvider {
    * Asks for server if token still valid.
    */
   async isAuthorized() {
-    const token = await this.storage.get(TOKEN_KEY);
+    const token = await this.getToken();
     if (token) {
       let options = new HttpHeaders({
         'Content-Type': 'application/json',
@@ -136,7 +142,15 @@ export class JwtTokenAuthProvider {
     
   }
    
-  isAuthenticated() {
+  async isAuthenticated() {
+    if(!this.isChecked){
+      return this.checkToken();
+    }else{
+      return new Promise<boolean>( ()=>{return this.authenticationState.value;} );
+    }
+  }
+
+  getAuthenticationState() {
     return this.authenticationState.value;
   }
 
@@ -145,13 +159,15 @@ export class JwtTokenAuthProvider {
   }
 
   async getToken() {
-    if (this.isAuthenticated()){
+    return this.plt.ready().then(async () => {
       const token = await this.storage.get(TOKEN_KEY);
       if (token) {
         return token;
+      }else{
+        return false;
       }
-    }else{
-      return false;
-    }
+    }, (rejected) => {
+      return rejected;
+    });
   }
 }

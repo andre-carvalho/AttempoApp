@@ -3,6 +3,7 @@ import { Storage } from '@ionic/storage';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtTokenAuthProvider } from '../jwt-token-auth/jwt-token-auth';
+import { throwError, Observable } from 'rxjs';
 
 /*
   Generated class for the LocationsProvider provider.
@@ -99,6 +100,8 @@ export class LocationsProvider {
         });
         return this.http.post(url, formData, { headers:options });
       });
+    }else{
+      return new Promise<Observable<Object>>( ()=>{return throwError(new Error('{"status":false,"message":"Not found token."}'));} );
     }
   }
 }

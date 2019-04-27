@@ -10,7 +10,7 @@ export class JwtTokenAuthGuardProvider implements CanActivate {
   constructor(public auth: JwtTokenAuthProvider) {}
 
   canActivate(): boolean {
-    return this.auth.isAuthenticated();
+    return this.auth.getAuthenticationState();
   }
 
 }
