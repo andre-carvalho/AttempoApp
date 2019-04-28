@@ -6,6 +6,8 @@ import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, LocationItem } from '../../services/locations/locations';
 import { environment } from '../../../environments/environment';
+import { EventHandlerVars } from '@angular/compiler/src/compiler_util/expression_converter';
+import { EventListener } from '@angular/core/src/debug/debug_node';
 
 declare var google: any;
 
@@ -28,7 +30,8 @@ export class MapPage implements OnInit {
   private locationOptions: any;
   // The Google API key is loaded from google-key.js file.
   private apiKey: any = environment.googleMapApiKey;
-  public btColor: string = '#FFFFFF';
+  public btColor: string = 'primary';
+  private partialModel: boolean = false;
   
   constructor(private alertCtrl: AlertController,
     private locationsProvider: LocationsProvider,
@@ -51,14 +54,6 @@ export class MapPage implements OnInit {
         this.startMapComponent();
       });
       document.head.appendChild(script);
-    }else{
-      if(!this.map_canvas){
-        const div = document.createElement('div');
-        div.id = 'map_canvas';
-        div.className="map_canvas";
-        document.body.appendChild(div);
-      }
-      this.startMapComponent();
     }
     
     this.markers = [];
@@ -67,10 +62,31 @@ export class MapPage implements OnInit {
   }
 
   ngOnInit():void {
-    // this.route.queryParams
-    //   .subscribe(params => {
-    //     console.log(params); // print all prarameters
-    // });
+    this.route.queryParams
+      .subscribe(params => {
+        if(params.partialModel && params.partialModel==="true"){
+          this.partialModel=true;
+        }
+    });
+    if(document.getElementById('googleMap')) {
+      let scripts = document.getElementsByTagName('script');
+      let script = scripts.namedItem('googleMap');
+      if(script.src!="") {
+        if(!this.map_canvas){
+          let mapCanvas=document.getElementById('map_canvas');
+          if(!mapCanvas){
+            const div = document.createElement('div');
+            div.id = 'map_canvas';
+            div.className="map_canvas";
+            document.body.appendChild(div);
+          }else{
+            this.map_canvas = mapCanvas;
+          }
+        }
+        this.startMapComponent();
+      }
+
+    }
   }
 
   /* Initialize the map only when Google Maps API Script was loaded */
@@ -85,24 +101,6 @@ export class MapPage implements OnInit {
     this.menu.open('mapConfig');
   }
 
-  /**
-   * Disabled...
-   */
-  /*
-  goToLocations() {
-    if (this.markers.length) {
-      let l = this.markers.length;
-      this.router.navigate(['locations'],  { queryParams:
-        {
-          currentLat: this.markers[l-1].getPosition().lat(),
-          currentLng: this.markers[l-1].getPosition().lng(),
-          startCamera: true
-        }
-      });
-    }
-  }
-  */
-
   goBack() {
     this.location.back();
   }
@@ -112,7 +110,8 @@ export class MapPage implements OnInit {
       {
         currentLat: this.currentCoords.lat,
         currentLng: this.currentCoords.lng,
-        startCamera: false
+        startCamera: false,
+        partialModel: this.partialModel
       }
     });
   }
@@ -142,7 +141,7 @@ export class MapPage implements OnInit {
 
     google.maps.event.addListener(marker, 'click', () => {
 
-      if (marker.getInfoModal){
+      if (marker.getInfoModal && marker.getInfoModal().map){
         marker.getInfoModal().close();
         return;
       }
@@ -167,14 +166,19 @@ export class MapPage implements OnInit {
     });
 
     google.maps.event.addListener(marker, 'dragstart', () => {
-      marker.getInfoModal().close();
+      if(marker.getInfoModal && marker.getInfoModal().map) {marker.getInfoModal().close();}
+    });
+    google.maps.event.addListener(marker, 'dragend', () => {
+      let lat = marker.getPosition().lat();
+      let lng = marker.getPosition().lng();
+      this.setCurrentCoords(lat,lng);
     });
   }
 
   initializeMap(): boolean {
 
     // skip if no map
-    if(!this.map_canvas) {
+    if(!this.map_canvas || (typeof google)==="undefined") {
       return false;
     }
     let demoCenter = new google.maps.LatLng(-23,-45);
@@ -254,7 +258,7 @@ export class MapPage implements OnInit {
   stopWatchingLocation() {
     // To stop notifications
     if (this.currentLocation != undefined) {
-      this.btColor = '#FFFFFF';// off
+      this.btColor = 'primary';// off
       this.currentLocation.setMap(null);
       this.watchLocation.unsubscribe();
     }else{
@@ -325,17 +329,32 @@ export class MapPage implements OnInit {
   private attachBalloon(markers:any): any {
     markers.forEach( (marker:any) => {
       google.maps.event.addListener(marker, 'click', () => {
+
+        if (marker.getInfoModal && marker.getInfoModal().map){
+          marker.getInfoModal().close();
+          return;
+        }
+
         let lat = marker.getPosition().lat();
         let lng = marker.getPosition().lng();
+        let timeref = '-';
+        let description = '-';
+        let locationSend = 'status desconhecido';
+        if(marker.location){
+          timeref = (marker.location.timeref)?(marker.location.timeref.toLocaleDateString()):('não informada');
+          description = (marker.location.description)?(marker.location.description):('não definida');
+          locationSend = (marker.location.send)?('sim'):('não');
+        }
+        
 
         let thead = 
         '<tr class="mk-thead"><td colspan="2">'+
-        'Salvo no servidor?'+((marker.location.send)?('sim'):('não'))+
+        'Salvo no servidor? '+locationSend+
         '</td></tr>';
         let tbody = 
         ((marker.location)?(
-          '<tr><td>Descrição:</td><td>'+marker.location.description+'</td></tr>'+
-          '<tr><td>Data:</td><td>'+marker.location.timeref.toLocaleDateString()+'</td></tr>'
+          '<tr><td>Descrição:</td><td>'+description+'</td></tr>'+
+          '<tr><td>Data:</td><td>'+timeref+'</td></tr>'
         ):(''))+
         '<tr><td>Latitude:</td><td>'+lat.toFixed(4)+'</td></tr>'+
         '<tr><td>Longitude:</td><td>'+lng.toFixed(4)+'</td></tr>';
@@ -351,8 +370,6 @@ export class MapPage implements OnInit {
         marker.getInfoModal=function(){
           return infoModal;
         };
-
-        this.setCurrentCoords(lat, lng);
       });
     });
   }

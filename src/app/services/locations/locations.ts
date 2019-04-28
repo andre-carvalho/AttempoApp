@@ -21,7 +21,7 @@ export class LocationsProvider {
   private API_URL = '192.168.1.121:5000';
 
   // keys in storage that should ignored in this class.
-  private keys=['access_token','api_url'];
+  private keys=['access_token','api_url','partial'];
 
   constructor(
     private storage: Storage,
@@ -63,6 +63,14 @@ export class LocationsProvider {
 
   private save(key: string, location: Location) {
     return this.storage.set(key, location);
+  }
+
+  public savePartial(key: string, location: Location) {
+    return this.storage.set(key, location);
+  }
+
+  public getPartial(key: string) {
+    return this.storage.get(key);
   }
 
   public remove(key: string) {

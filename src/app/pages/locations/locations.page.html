@@ -17,37 +17,55 @@
 
 <ion-content padding>
   <ion-list *ngIf="model">
-    <ion-card>
+    <ion-card class="template-card">
+      <ion-menu side="end" menuId="newCardTools">
+        <ion-content>
+          <ion-list>
+            <ion-item>
+              <ion-button fill="clear" (click)="takePicture(1)">
+                <ion-icon name="camera"></ion-icon>&nbsp;&nbsp;Capturar foto
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-button fill="clear" (click)="takePicture(0)">
+                <ion-icon name="images"></ion-icon>&nbsp;&nbsp;Foto da galeria
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-button fill="clear" (click)="goToMap()">
+                <ion-icon name="map"></ion-icon>&nbsp;&nbsp;Ajustar local
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-button fill="clear" (click)="save()">
+                <ion-icon name="done-all"></ion-icon>&nbsp;&nbsp;Salvar ocorrência
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
+      <ion-router-outlet main></ion-router-outlet>
 
       <ion-card-content>
 
+        <ion-button fill="clear" class="menu-card" (click)="openNewCardTools()">
+          <ion-icon size="small" name="more"></ion-icon>
+        </ion-button>
+        
         <ion-thumbnail slot="start">
           <img [src]="model.photoURI" *ngIf="model && model.photoURI">
         </ion-thumbnail>
-        
-        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="takePicture(1)" *ngIf="model && !model.photo">
-          <ion-icon slot="icon-only" name="camera"></ion-icon>
-        </ion-button>
-        
-        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="takePicture(0)" *ngIf="model && !model.photo">
-          <ion-icon slot="icon-only" name="images"></ion-icon>
-        </ion-button>
-      
+
       </ion-card-content>
       
       <ion-card-content>
-        <ion-label floating>Descrição</ion-label>
-        <ion-input type="text" name="description" [(ngModel)]="model.description"></ion-input>
+        <ion-textarea class="template-text" autofocus="true" name="description" [(ngModel)]="model.description" placeholder="Descreva a ocorrência aqui..."></ion-textarea>
       </ion-card-content>
 
       <ion-card-content>
-        <p>Lat/Long( <span [innerHTML]="model.lat"></span>, <span [innerHTML]="model.lng"></span> )</p>
-
-        <ion-button fill="clear" size="small" slot="right" color="dark" (click)="save()">
-          <ion-icon name="done-all"></ion-icon> Salvar
-        </ion-button>
+        <ion-note slot="start" *ngIf="model.lat && model.lng">Usando coordenadas GPS. Use o menu para redefinir.</ion-note>
       </ion-card-content>
-      
+
     </ion-card>
   </ion-list>
 

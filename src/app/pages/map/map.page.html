@@ -4,15 +4,6 @@
       <ion-back-button icon="arrow-round-back" defaultHref="burnered"></ion-back-button>
     </ion-buttons>
     <ion-title>Mapa</ion-title>
-    <!-- <ion-buttons slot="end">
-      <ion-button style="visibility: hidden;" id="infowindowhidden" (click)="useCurrentCoords()"></ion-button>
-      <ion-button icon-only (click)="reloadLocations()">
-        <ion-icon name="eye"></ion-icon>Show
-      </ion-button>
-      <ion-button icon-only [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
-        <ion-icon name="locate"></ion-icon>Tracking
-      </ion-button>
-    </ion-buttons> -->
     <ion-buttons slot="end">
       <ion-button (click)="openConfig()">
         <ion-icon name="options"></ion-icon>
@@ -31,18 +22,18 @@
   <ion-content>
     <ion-list>
       <ion-item>
-        <ion-button (click)="useCurrentCoords()">
-          <ion-icon name="pin"></ion-icon> Usar coordenada atual
+        <ion-button fill="clear" (click)="useCurrentCoords()">
+          <ion-icon name="pin"></ion-icon>&nbsp;&nbsp;Usar coordenada atual
         </ion-button>
       </ion-item>
       <ion-item>
-        <ion-button (click)="reloadLocations()">
-          <ion-icon name="eye"></ion-icon> Minhas ocorrências
+        <ion-button fill="clear" (click)="reloadLocations()">
+          <ion-icon name="eye"></ion-icon>&nbsp;&nbsp;Ver minhas ocorrências
         </ion-button>
       </ion-item>
       <ion-item>
-        <ion-button [ngStyle]="{'background-color': btColor }" (click)="startWatchingLocation()">
-          <ion-icon name="locate"></ion-icon> Tracking
+        <ion-button fill="clear" (click)="startWatchingLocation()">
+          <ion-icon [ngStyle]="{'color': btColor }" name="locate"></ion-icon>&nbsp;&nbsp;Ativar GPS contínuo
         </ion-button>
       </ion-item>
     </ion-list>

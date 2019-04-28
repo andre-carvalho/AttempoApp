@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { AlertController, ToastController } from '@ionic/angular';
+import { AlertController, ToastController, MenuController } from '@ionic/angular';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationItem } from '../../services/locations/locations';
 import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-locations',
@@ -35,7 +35,10 @@ export class LocationsPage implements OnInit {
     private camera: Camera, public geolocation: Geolocation,
     private toastController: ToastController, private alertCtrl: AlertController,
     private authService: JwtTokenAuthProvider,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute,
+    private router: Router,
+    private menu: MenuController) {
+      console.log('call constructor');
   }
 
   async presentToast(message: string) {
@@ -103,19 +106,22 @@ export class LocationsPage implements OnInit {
         this.currentLat = +params.currentLat;
         this.currentLng = +params.currentLng;
         this.startCamera = params.startCamera==="true";
-   
-      this.createNewLocation();
-      this.reloadLocations();
+        if(params.partialModel==="true") {
+          this.restorePartialLocation();
+        }else{
+          this.createNewLocation();
+        }
+        this.reloadLocations();
 
-      if(this.startCamera) {
-        this.takePicture(0);
-      }
-      if(!this.currentLat || !this.currentLng) {
-        this.catchLocation();
-      }else{
-        this.model.lat = (+(+this.currentLat).toFixed(4));
-        this.model.lng = (+(+this.currentLng).toFixed(4));
-      }
+        if(this.startCamera) {
+          this.takePicture(0);
+        }
+        if(!this.currentLat || !this.currentLng) {
+          this.catchLocation();
+        }else{
+          this.model.lat = (+(+this.currentLat).toFixed(4));
+          this.model.lng = (+(+this.currentLng).toFixed(4));
+        }
     });
   }
 
@@ -134,6 +140,8 @@ export class LocationsPage implements OnInit {
       this.model = new Location();
       let user=this.authService.getUser();
       this.model.userid=user.sub;// sub in JWT is user as ID
+      // set a default picture to fill the photo position
+      this.model.photoURI="assets/shapes.svg";
     }
   }
 
@@ -147,6 +155,11 @@ export class LocationsPage implements OnInit {
       })
   }
 
+  openNewCardTools() {
+    this.menu.enable(true, 'newCardTools');
+    this.menu.open('newCardTools');
+  }
+
   /**
    * Take or choose a picture from one provided sources.
    * @param source The number base on picture source types from Camera.
@@ -155,8 +168,8 @@ export class LocationsPage implements OnInit {
    * SAVEDPHOTOALBUM: 2
    */
   takePicture(source:number) {
+    this.menu.close('newCardTools');
     if(source<0 || source>2){
-      console.log('The parameter "source" is out of range.');
       throw Error('The parameter "source" is out of range.');
     }
     this.options.sourceType=source;
@@ -169,12 +182,10 @@ export class LocationsPage implements OnInit {
      });
   }
 
-  prepareHeader(img:string) {
-    if(img.startsWith('file')) {
-      return img;
-    }else{
-      return 'data:image/png;base64,'+img;
-    }
+  goToMap() {
+    this.menu.close('newCardTools');
+    // Store the partial data for current template to use when user return from map
+    this.savePartialLocation();
   }
 
   catchLocation() {
@@ -206,7 +217,31 @@ export class LocationsPage implements OnInit {
   }
 
   private saveLocation() {
+    this.menu.close('newCardTools');
     return this.locationsProvider.insert(this.model);
+  }
+
+  private savePartialLocation() {
+    this.locationsProvider.savePartial("partial", this.model)
+    .then(() => {
+      // reirect to map
+      this.router.navigate(['/map'], {queryParams:{partialModel:true}});
+    })
+    .catch(() => {
+      console.log('Fail to store partial data.');
+      this.router.navigate(['/map'], {queryParams:{partialModel:false}});
+    });
+  }
+
+  private restorePartialLocation() {
+    this.locationsProvider.getPartial("partial")
+    .then((model) => {
+      this.model=model;
+      this.locationsProvider.remove("partial");
+    })
+    .catch(() => {
+      console.log('Fail to restore partial data.');
+    });
   }
 
   public sendDataToServer(item: LocationItem) {
