@@ -3,6 +3,7 @@ import { AlertController, ToastController, MenuController } from '@ionic/angular
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, Location, LocationItem } from '../../services/locations/locations';
+import { DataService } from '../../services/routing-data/data.service';
 import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -37,8 +38,37 @@ export class LocationsPage implements OnInit {
     private authService: JwtTokenAuthProvider,
     private route: ActivatedRoute,
     private router: Router,
+    private routingData: DataService,
     private menu: MenuController) {
-      console.log('call constructor');
+      console.log('call locationPage constructor');
+  }
+
+  ngOnInit() {
+    console.log('call locationPage onInit');
+  }
+
+  ionViewWillEnter() {
+    console.log('call LocationsPage ionViewWillEnter');
+
+    let mapCoord = this.routingData.getData('map_coord');
+    this.currentLat = (mapCoord)?(+mapCoord.lat):(0);
+    this.currentLng = (mapCoord)?(+mapCoord.lng):(0);
+    
+    // get tag control from routing data service
+    let partialModel = this.routingData.getData('partial_model');
+    if(partialModel) {
+      this.restorePartialLocation();
+    }else{
+      this.createNewLocation();
+    }
+
+    this.startCamera = this.routingData.getData('start_camera');
+    if(this.startCamera) {
+      this.takePicture(0);
+    }
+
+    // to populate the locations.page view with cards of stored locations
+    this.reloadLocations();
   }
 
   async presentToast(message: string) {
@@ -98,33 +128,6 @@ export class LocationsPage implements OnInit {
     alert.present();
   }
 
-  ngOnInit() {
-    this.route.queryParams
-      .subscribe(params => {
-        console.log(params); // print all parameters
-
-        this.currentLat = +params.currentLat;
-        this.currentLng = +params.currentLng;
-        this.startCamera = params.startCamera==="true";
-        if(params.partialModel==="true") {
-          this.restorePartialLocation();
-        }else{
-          this.createNewLocation();
-        }
-        this.reloadLocations();
-
-        if(this.startCamera) {
-          this.takePicture(0);
-        }
-        if(!this.currentLat || !this.currentLng) {
-          this.catchLocation();
-        }else{
-          this.model.lat = (+(+this.currentLat).toFixed(4));
-          this.model.lng = (+(+this.currentLng).toFixed(4));
-        }
-    });
-  }
-
   reloadLocations() {
     if(this.locationsProvider) {
       this.locationsProvider.getAll()
@@ -140,6 +143,7 @@ export class LocationsPage implements OnInit {
       this.model = new Location();
       let user=this.authService.getUser();
       this.model.userid=user.sub;// sub in JWT is user as ID
+      this.setCoordsInModel();
       // set a default picture to fill the photo position
       this.model.photoURI="assets/shapes.svg";
     }
@@ -209,7 +213,6 @@ export class LocationsPage implements OnInit {
         this.model=undefined;
         this.createNewLocation();
         this.reloadLocations();
-        this.catchLocation();
       })
       .catch(() => {
         this.presentToast('Erro ao gravar a ocorrência.');
@@ -224,12 +227,16 @@ export class LocationsPage implements OnInit {
   private savePartialLocation() {
     this.locationsProvider.savePartial("partial", this.model)
     .then(() => {
-      // reirect to map
-      this.router.navigate(['/map'], {queryParams:{partialModel:true}});
+      // set tag control into routing data service
+      this.routingData.setData('partial_model',true);
+      // redirect to map
+      this.router.navigate(['/map']);
     })
     .catch(() => {
       console.log('Fail to store partial data.');
-      this.router.navigate(['/map'], {queryParams:{partialModel:false}});
+      // set tag control into routing data service
+      this.routingData.setData('partial_model',false);
+      this.router.navigate(['/map']);
     });
   }
 
@@ -237,11 +244,23 @@ export class LocationsPage implements OnInit {
     this.locationsProvider.getPartial("partial")
     .then((model) => {
       this.model=model;
+      this.setCoordsInModel();
       this.locationsProvider.remove("partial");
+      // set tag control into routing data service
+      this.routingData.setData('partial_model',false);
     })
     .catch(() => {
       console.log('Fail to restore partial data.');
     });
+  }
+
+  private setCoordsInModel() {
+    if(!this.currentLat || !this.currentLng) {
+      this.catchLocation();
+    }else{
+      this.model.lat = (+(+this.currentLat).toFixed(6));
+      this.model.lng = (+(+this.currentLng).toFixed(6));
+    }
   }
 
   public sendDataToServer(item: LocationItem) {

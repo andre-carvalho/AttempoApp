@@ -11,9 +11,10 @@ import { Storage, IonicStorageModule } from '@ionic/storage';
 import { JwtModule, JWT_OPTIONS } from '@auth0/angular-jwt';
 import { DatePipe } from '@angular/common';
 import { ImagePicker } from '@ionic-native/image-picker/ngx';
+import { Geolocation } from '@ionic-native/geolocation/ngx';
+import { Camera } from '@ionic-native/camera/ngx';
 import { LocationsProvider } from './services/locations/locations';
-import { Crop } from '@ionic-native/crop/ngx';
-import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
+import { DataService } from './services/routing-data/data.service';
 
 export function jwtOptionsFactory(storage) {
   return {
@@ -44,13 +45,13 @@ export function jwtOptionsFactory(storage) {
   providers: [
     StatusBar,
     SplashScreen,
+    Geolocation,
+    Camera,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     DatePipe,
     ImagePicker,
-    Crop,
-    FileTransfer,
-    FileTransferObject,
-    LocationsProvider
+    LocationsProvider,
+    DataService
   ],
   bootstrap: [AppComponent]
 })

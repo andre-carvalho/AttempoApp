@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -6,8 +6,7 @@ import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, LocationItem } from '../../services/locations/locations';
 import { environment } from '../../../environments/environment';
-import { EventHandlerVars } from '@angular/compiler/src/compiler_util/expression_converter';
-import { EventListener } from '@angular/core/src/debug/debug_node';
+import { DataService } from '../../services/routing-data/data.service';
 
 declare var google: any;
 
@@ -17,7 +16,7 @@ declare var google: any;
   styleUrls: ['./map.page.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class MapPage implements OnInit {
+export class MapPage implements OnInit, OnDestroy {
 
   @ViewChild('map_canvas') map_canvas:any;
   locations: LocationItem[];
@@ -39,7 +38,10 @@ export class MapPage implements OnInit {
     private router: Router,
     public geolocation: Geolocation,
     private route: ActivatedRoute,
+    private routingData: DataService,
     private menu: MenuController) {
+
+    console.log('call MapPage constructor');
     
     /*load google map script dynamically if not loaded yet */
     if(!document.getElementById('googleMap')) {
@@ -62,12 +64,9 @@ export class MapPage implements OnInit {
   }
 
   ngOnInit():void {
-    this.route.queryParams
-      .subscribe(params => {
-        if(params.partialModel && params.partialModel==="true"){
-          this.partialModel=true;
-        }
-    });
+
+    console.log('call MapPage onInit');
+
     if(document.getElementById('googleMap')) {
       let scripts = document.getElementsByTagName('script');
       let script = scripts.namedItem('googleMap');
@@ -89,6 +88,18 @@ export class MapPage implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    if(this.watchLocation != undefined){
+      this.watchLocation.unsubscribe();
+    }
+  }
+
+  ionViewWillEnter() {
+    console.log('call MapPage ionViewWillEnter');
+    // get tag control from routing data service
+    this.partialModel = this.routingData.getData('partial_model');
+  }
+
   /* Initialize the map only when Google Maps API Script was loaded */
   async startMapComponent() {
     if(this.initializeMap()){
@@ -106,17 +117,14 @@ export class MapPage implements OnInit {
   }
 
   useCurrentCoords() {
-    this.router.navigate(['locations'],  { queryParams:
-      {
-        currentLat: this.currentCoords.lat,
-        currentLng: this.currentCoords.lng,
-        startCamera: false,
-        partialModel: this.partialModel
-      }
-    });
+    this.routingData.setData('map_coord',this.currentCoords);
+    this.routingData.setData('start_camera',false);
+    this.routingData.setData('partial_model',this.partialModel);
+
+    this.router.navigate(['locations']);
   }
 
-  setCurrentCoords(lat, lng) {
+  setCurrentCoords(lat:number, lng:number) {
     this.currentCoords.lat=lat;
     this.currentCoords.lng=lng;
   }
