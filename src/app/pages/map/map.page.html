@@ -23,18 +23,28 @@
     <ion-list>
       <ion-item>
         <ion-button fill="clear" (click)="useCurrentCoords()">
-          <ion-icon name="pin"></ion-icon>&nbsp;&nbsp;Usar coordenada atual
+          <ion-icon name="locate"></ion-icon>&nbsp;&nbsp;Usar coordenada atual
         </ion-button>
       </ion-item>
+
       <ion-item>
-        <ion-button fill="clear" (click)="reloadLocations()">
-          <ion-icon name="eye"></ion-icon>&nbsp;&nbsp;Ver minhas ocorrências
-        </ion-button>
+        <ion-toggle [ngStyle]="{'color': btColor }" [(ngModel)]="currentCoord" (ionChange)="toggleCurrentCoord()"></ion-toggle>
+        <ion-label color="primary">Ver/ajustar coordenada atual</ion-label>
       </ion-item>
+
       <ion-item>
-        <ion-button fill="clear" (click)="startWatchingLocation()">
-          <ion-icon [ngStyle]="{'color': btColor }" name="locate"></ion-icon>&nbsp;&nbsp;Ativar GPS contínuo
-        </ion-button>
+        <ion-toggle [(ngModel)]="gpsState" (ionChange)="toggleGPS()"></ion-toggle>
+        <ion-label color="primary">GPS contínuo</ion-label>
+      </ion-item>
+      
+      <ion-item>
+        <ion-toggle [(ngModel)]="eventsByMe" (ionChange)="toggleByMe()"></ion-toggle>
+        <ion-label color="primary">Ver minhas ocorrências</ion-label>
+      </ion-item>
+
+      <ion-item>
+        <ion-toggle disabled="true" [(ngModel)]="eventsByOthers" (ionChange)="toggleByOthers()"></ion-toggle>
+        <ion-label color="primary">Ver outras ocorrências</ion-label>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -43,13 +53,13 @@
 <ion-router-outlet main></ion-router-outlet>
 
 <ion-content padding>
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+  <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button><ion-icon name="pin"></ion-icon></ion-fab-button>
     <ion-fab-list side="start">
       <ion-fab-button mini (click)="addLocation()"><ion-icon name="add-circle"></ion-icon></ion-fab-button>
       <ion-fab-button mini (click)="removeLastLocation()"><ion-icon name="remove-circle"></ion-icon></ion-fab-button>
     </ion-fab-list>
-  </ion-fab>
+  </ion-fab> -->
   
   <div #map_canvas class="map_canvas"></div>
   

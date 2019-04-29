@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 import { Location } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { LocationsProvider, LocationItem } from '../../services/locations/locations';
@@ -31,13 +31,16 @@ export class MapPage implements OnInit, OnDestroy {
   private apiKey: any = environment.googleMapApiKey;
   public btColor: string = 'primary';
   private partialModel: boolean = false;
+  private currentCoord: boolean = true;
+  private gpsState: boolean = false;
+  private eventsByOthers: boolean = false;
+  private eventsByMe: boolean = false;
   
   constructor(private alertCtrl: AlertController,
     private locationsProvider: LocationsProvider,
     private location: Location,
     private router: Router,
     public geolocation: Geolocation,
-    private route: ActivatedRoute,
     private routingData: DataService,
     private menu: MenuController) {
 
@@ -84,7 +87,6 @@ export class MapPage implements OnInit, OnDestroy {
         }
         this.startMapComponent();
       }
-
     }
   }
 
@@ -98,6 +100,16 @@ export class MapPage implements OnInit, OnDestroy {
     console.log('call MapPage ionViewWillEnter');
     // get tag control from routing data service
     this.partialModel = this.routingData.getData('partial_model');
+    if(this.eventsByMe){
+      this.reloadLocations();
+    }else{
+      // remove from map all locations stored by me
+      this.clearSavedMarkers();
+    }
+    if(this.eventsByOthers){
+      // TODO: needs of service that provide locations from other people
+      console.log('no implemented yet');
+    }
   }
 
   /* Initialize the map only when Google Maps API Script was loaded */
@@ -274,6 +286,34 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+  toggleCurrentCoord() {
+    if(this.currentCoord){
+      this.addLocation();
+    }else{
+      this.removeLastLocation();
+    }
+  }
+
+  toggleGPS() {
+    if(this.gpsState){
+      this.startWatchingLocation();
+    }else{
+      this.stopWatchingLocation();
+    }
+  }
+
+  toggleByMe(){
+    if(this.eventsByMe){
+      this.reloadLocations();
+    }else{
+      this.clearSavedMarkers();
+    }
+  }
+
+  toggleByOthers(){
+    console.log('toggle by other');
+  }
+
   removeLastLocation() {
     let m = this.markers.pop();
     if(m != undefined)
@@ -292,6 +332,15 @@ export class MapPage implements OnInit, OnDestroy {
         this.locations = result;
         this.displaySavedMarkers(this.locations);
       });
+  }
+
+  clearSavedMarkers() {
+    if(!this.savedLocations) return;
+    while(this.savedLocations.length) {
+      let m = this.savedLocations.pop();
+      if(m != undefined)
+        m.setMap(null);
+    }
   }
 
   displaySavedMarkers(locations: LocationItem[]) {
