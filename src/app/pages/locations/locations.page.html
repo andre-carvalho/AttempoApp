@@ -3,17 +3,42 @@
     <ion-buttons slot="start">
       <ion-back-button icon="arrow-round-back" defaultHref="burnered"></ion-back-button>
     </ion-buttons>
+
     <ion-buttons slot="end">
-      <ion-button (click)="sendDataToServer()">
-        <ion-icon name="cloud-upload"></ion-icon>
-      </ion-button>
-      <ion-button (click)="setServerURL()">
+      <ion-button (click)="openConfig()">
         <ion-icon name="options"></ion-icon>
       </ion-button>
     </ion-buttons>
+
     <ion-title>Lista de Ocorrências</ion-title>
+
   </ion-toolbar>
 </ion-header>
+
+<ion-menu side="end" menuId="mainConfig">
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>Opções</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list>
+      <ion-item>
+        <ion-button fill="clear" (click)="sendDataToServer()">
+          <ion-icon name="cloud-upload"></ion-icon>&nbsp;&nbsp;Enviar todas as ocorrências
+        </ion-button>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked" color="primary">URL do serviço de envio</ion-label>
+        <ion-input type="url" color="medium" (ionBlur)="storeSyncURL()" [(ngModel)]="syncURL"></ion-input>
+      </ion-item>
+      
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<ion-router-outlet main></ion-router-outlet>  
 
 <ion-content padding>
   <ion-list *ngIf="model">
@@ -53,7 +78,7 @@
         </ion-button>
         
         <ion-thumbnail slot="start">
-          <img [src]="model.photoURI" *ngIf="model && model.photoURI">
+          <img (click)="takePicture(1)" [src]="model.photoURI" *ngIf="model && model.photoURI">
         </ion-thumbnail>
 
       </ion-card-content>
@@ -70,27 +95,52 @@
   </ion-list>
 
   <ion-list>
-    <ion-card *ngFor="let item of locations">
+    <ion-card class="card-items" *ngFor="let item of locations">
+      <ion-menu side="end" menuId="{{ item.key }}">
+        <ion-content>
+          <ion-list>
+            <ion-item>
+              <ion-button fill="clear" (click)="removeLocation(item)">
+                <ion-icon name="trash"></ion-icon>&nbsp;&nbsp;Remover copia local
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-button fill="clear" (click)="sendDataToServer(item)" *ngIf="!item.location.send">
+                <ion-icon name="cloud-upload"></ion-icon>&nbsp;&nbsp;Enviar ocorrência
+              </ion-button>
+              <ion-button color="success" size="small" fill="clear" *ngIf="item.location.send">
+                <ion-icon size="small" name="cloud-done"></ion-icon>&nbsp;&nbsp;Ocorrência já foi enviada
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
+      <ion-router-outlet main></ion-router-outlet>
+
+      <ion-card-content>
+        <ion-button fill="clear" class="menu-card" (click)="openEachCardTools(item)">
+          <ion-icon size="small" name="more"></ion-icon>
+        </ion-button>
+      </ion-card-content>
+
       <ion-card-content>
         <ion-thumbnail slot="start">
           <img [src]="item.location.photoURI" *ngIf="item.location.photoURI">
         </ion-thumbnail>
-        <p>Criação: {{ item.location.timeref | date:'dd/MM/yyyy' }}</p>
-
-        <p>Descrição: {{ item.location.description }}</p>
+      </ion-card-content>
+      
+      <ion-card-content>
+        <ion-note slot="start" *ngIf="item.location.timeref">Criação: {{ item.location.timeref | date:'dd/MM/yyyy' }}</ion-note>
       </ion-card-content>
       <ion-card-content>
-        <p>Lat/Long( {{ item.location.lat }} , {{ item.location.lng }} )</p>
+        <ion-note slot="start" *ngIf="item.location.description">Descrição: {{ item.location.description }}</ion-note>
+      </ion-card-content>
+      <ion-card-content>
+        <ion-note slot="start" *ngIf="item.location.lat && item.location.lng">Coordenada: ( {{ item.location.lat }} , {{ item.location.lng }} )</ion-note>
+      </ion-card-content>
 
-        <ion-button fill="clear" size="small" slot="end" color="dark" (click)="removeLocation(item)">
-          <ion-icon name="trash"></ion-icon>
-        </ion-button>
-        <ion-button fill="clear" size="small" slot="end" color="dark" (click)="sendDataToServer(item)" *ngIf="!item.location.send">
-          <ion-icon name="cloud-upload"></ion-icon>
-        </ion-button>
-        <ion-button fill="clear" size="small" slot="end" color="dark" *ngIf="item.location.send">
-          <ion-icon name="cloud-done"></ion-icon>
-        </ion-button>
+      <ion-card-content>
+        <ion-note slot="start" *ngIf="item.location.send">Você já enviou esta ocorrência</ion-note>
       </ion-card-content>
       <ion-card-content>
         <ion-progress-bar type="indeterminate" *ngIf="item.location.sending"></ion-progress-bar>

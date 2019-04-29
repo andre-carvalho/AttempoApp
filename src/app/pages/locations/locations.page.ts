@@ -18,6 +18,7 @@ export class LocationsPage implements OnInit {
   locations: LocationItem[];
   model: Location;
   key: string;
+  syncURL: string;
   public currentLat: any;
   public currentLng: any;
   public startCamera: any;
@@ -36,15 +37,13 @@ export class LocationsPage implements OnInit {
     private camera: Camera, public geolocation: Geolocation,
     private toastController: ToastController, private alertCtrl: AlertController,
     private authService: JwtTokenAuthProvider,
-    private route: ActivatedRoute,
     private router: Router,
     private routingData: DataService,
     private menu: MenuController) {
-      console.log('call locationPage constructor');
   }
 
   ngOnInit() {
-    console.log('call locationPage onInit');
+    this.syncURL='http://'+this.locationsProvider.getServerURL();
   }
 
   ionViewWillEnter() {
@@ -71,6 +70,11 @@ export class LocationsPage implements OnInit {
     this.reloadLocations();
   }
 
+  openConfig() {
+    this.menu.enable(true, 'mainConfig');
+    this.menu.open('mainConfig');
+  }
+
   async presentToast(message: string) {
     const toast = await this.toastController.create({
       message: message,
@@ -94,38 +98,8 @@ export class LocationsPage implements OnInit {
     alert.present();
   }
 
-  async presentConfigAlert() {
-    const alert = await this.alertCtrl.create({
-      header: 'Serviço para envio de dados',
-      inputs: [
-        {
-          name: 'server_url',
-          value: 'http://'+this.locationsProvider.getServerURL(),
-          type: 'url'
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel',
-          handler: () => {
-            console.log('Cancel clicked');
-          }
-        },
-        {
-          text: 'Confirmar',
-          handler: data => {
-            if (data.server_url) {
-              this.locationsProvider.setServerURL(data.server_url);
-            } else {
-              console.log('Input URL is undefined');
-              return false;
-            }
-          }
-        }
-      ]
-    });
-    alert.present();
+  storeSyncURL(){
+    this.locationsProvider.setServerURL(this.syncURL);
   }
 
   reloadLocations() {
@@ -145,7 +119,7 @@ export class LocationsPage implements OnInit {
       this.model.userid=user.sub;// sub in JWT is user as ID
       this.setCoordsInModel();
       // set a default picture to fill the photo position
-      this.model.photoURI="assets/shapes.svg";
+      this.model.photoURI="assets/imgs/default_picture.jpeg";
     }
   }
 
@@ -162,6 +136,11 @@ export class LocationsPage implements OnInit {
   openNewCardTools() {
     this.menu.enable(true, 'newCardTools');
     this.menu.open('newCardTools');
+  }
+
+  openEachCardTools(l:LocationItem) {
+    this.menu.enable(true, l.key);
+    this.menu.open(l.key);
   }
 
   /**
@@ -264,6 +243,8 @@ export class LocationsPage implements OnInit {
   }
 
   public sendDataToServer(item: LocationItem) {
+
+    this.menu.close(item.key);
     
     if(item == undefined) {
       let l = this.locations.length;
@@ -276,10 +257,6 @@ export class LocationsPage implements OnInit {
       this.sendToServer(item.location, item.key);
     }
     
-  }
-
-  public setServerURL() {
-    this.presentConfigAlert();
   }
 
   private sendToServer(location: Location, key: string) {
