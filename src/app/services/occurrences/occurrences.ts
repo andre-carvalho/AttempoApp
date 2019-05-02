@@ -4,21 +4,16 @@ import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { JwtTokenAuthProvider } from '../jwt-token-auth/jwt-token-auth';
 import { throwError, Observable } from 'rxjs';
+import { Occurrence, OccurrenceItem } from '../../entities/occurrence';
 
-/*
-  Generated class for the LocationsProvider provider.
-
-  See https://angular.io/guide/dependency-injection for more info on providers
-  and Angular DI.
-*/
 @Injectable({
   providedIn: 'root'
 })
-export class LocationsProvider {
+export class OccurrencesProvider {
 
   // default API URL
   //private API_URL = '35.231.50.207';
-  private API_URL = '192.168.1.121:5000';
+  private API_URL = '192.168.1.121:5001';
 
   // keys in storage that should ignored in this class.
   private keys=['access_token','api_url','partial'];
@@ -48,25 +43,25 @@ export class LocationsProvider {
     return this.API_URL;
   }
 
-  public insert(location: Location) {
+  public insert(occurrence: Occurrence) {
     let key = this.datepipe.transform(new Date(), "ddMMyyyyHHmmss");
-    location.timeref = new Date();
-    if(!location.description){
-      location.description='Sem descrição.';
+    occurrence.timeref = new Date();
+    if(!occurrence.description){
+      occurrence.description='Sem descrição.';
     }
-    return this.save(key, location);
+    return this.save(key, occurrence);
   }
 
-  public update(key: string, location: Location) {
-    return this.save(key, location);
+  public update(key: string, occurrence: Occurrence) {
+    return this.save(key, occurrence);
   }
 
-  private save(key: string, location: Location) {
-    return this.storage.set(key, location);
+  private save(key: string, occurrence: Occurrence) {
+    return this.storage.set(key, occurrence);
   }
 
-  public savePartial(key: string, location: Location) {
-    return this.storage.set(key, location);
+  public savePartial(key: string, occurrence: Occurrence) {
+    return this.storage.set(key, occurrence);
   }
 
   public getPartial(key: string) {
@@ -79,18 +74,18 @@ export class LocationsProvider {
 
   public async getAll() {
 
-    let locations: LocationItem[] = [];
+    let occurrences: OccurrenceItem[] = [];
 
     try {
-      await this.storage.forEach((value: Location, key: string, iterationNumber: Number) => {
+      await this.storage.forEach((value: Occurrence, key: string, iterationNumber: Number) => {
         if (this.keys.indexOf(key)<0) {
-          let location = new LocationItem();
-          location.key = key;
-          location.location = value;
-          locations.push(location);
+          let occurrence = new OccurrenceItem();
+          occurrence.key = key;
+          occurrence.occurrence = value;
+          occurrences.push(occurrence);
         }
       });
-      return Promise.resolve(locations);
+      return Promise.resolve(occurrences);
     }
     catch (error) {
       return Promise.reject(error);
@@ -98,7 +93,7 @@ export class LocationsProvider {
   }
 
   public async postData(formData: FormData) {
-    let url = 'http://' + this.API_URL + '/locations';
+    let url = 'http://' + this.API_URL + '/occurrences';
     const awaitToken = this.authService.getToken();
     if (awaitToken) {
       return awaitToken.then( (token) => {
@@ -112,21 +107,4 @@ export class LocationsProvider {
       return new Promise<Observable<Object>>( ()=>{return throwError(new Error('{"status":false,"message":"Not found token."}'));} );
     }
   }
-}
-
-export class Location {
-  lat: number;
-  lng: number;
-  description: string;
-  photo: string;
-  photoURI: string;
-  timeref: Date;
-  send: boolean=false;
-  sending: boolean=false;
-  userid: number;
-}
-
-export class LocationItem {
-  key: string;
-  location: Location;
 }

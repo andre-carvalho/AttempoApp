@@ -13,7 +13,8 @@ import { DatePipe } from '@angular/common';
 import { ImagePicker } from '@ionic-native/image-picker/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { Camera } from '@ionic-native/camera/ngx';
-import { LocationsProvider } from './services/locations/locations';
+import { OccurrencesProvider } from './services/occurrences/occurrences';
+import { SynchronizeService } from './services/occurrences/synchronize.service';
 import { DataService } from './services/routing-data/data.service';
 
 export function jwtOptionsFactory(storage) {
@@ -50,8 +51,9 @@ export function jwtOptionsFactory(storage) {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     DatePipe,
     ImagePicker,
-    LocationsProvider,
-    DataService
+    OccurrencesProvider,
+    DataService,
+    SynchronizeService
   ],
   bootstrap: [AppComponent]
 })

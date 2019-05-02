@@ -95,20 +95,20 @@
   </ion-list>
 
   <ion-list>
-    <ion-card class="card-items" *ngFor="let item of locations">
+    <ion-card class="card-items" *ngFor="let item of occurrences">
       <ion-menu side="end" menuId="{{ item.key }}">
         <ion-content>
           <ion-list>
             <ion-item>
-              <ion-button fill="clear" (click)="removeLocation(item)">
+              <ion-button fill="clear" (click)="removeOccurrence(item)">
                 <ion-icon name="trash"></ion-icon>&nbsp;&nbsp;Remover copia local
               </ion-button>
             </ion-item>
             <ion-item>
-              <ion-button fill="clear" (click)="sendDataToServer(item)" *ngIf="!item.location.send">
+              <ion-button fill="clear" (click)="sendDataToServer(item)" *ngIf="!item.occurrence.send">
                 <ion-icon name="cloud-upload"></ion-icon>&nbsp;&nbsp;Enviar ocorrência
               </ion-button>
-              <ion-button color="success" size="small" fill="clear" *ngIf="item.location.send">
+              <ion-button color="success" size="small" fill="clear" *ngIf="item.occurrence.send">
                 <ion-icon size="small" name="cloud-done"></ion-icon>&nbsp;&nbsp;Ocorrência já foi enviada
               </ion-button>
             </ion-item>
@@ -125,25 +125,25 @@
 
       <ion-card-content>
         <ion-thumbnail slot="start">
-          <img [src]="item.location.photoURI" *ngIf="item.location.photoURI">
+          <img [src]="item.occurrence.photoURI" *ngIf="item.occurrence.photoURI">
         </ion-thumbnail>
       </ion-card-content>
       
       <ion-card-content>
-        <ion-note slot="start" *ngIf="item.location.timeref">Criação: {{ item.location.timeref | date:'dd/MM/yyyy' }}</ion-note>
+        <ion-note slot="start" *ngIf="item.occurrence.timeref">Criação: {{ item.occurrence.timeref | date:'dd/MM/yyyy' }}</ion-note>
       </ion-card-content>
       <ion-card-content>
-        <ion-note slot="start" *ngIf="item.location.description">Descrição: {{ item.location.description }}</ion-note>
+        <ion-note slot="start" *ngIf="item.occurrence.description">Descrição: {{ item.occurrence.description }}</ion-note>
       </ion-card-content>
       <ion-card-content>
-        <ion-note slot="start" *ngIf="item.location.lat && item.location.lng">Coordenada: ( {{ item.location.lat }} , {{ item.location.lng }} )</ion-note>
+        <ion-note slot="start" *ngIf="item.occurrence.lat && item.occurrence.lng">Coordenada: ( {{ item.occurrence.lat }} , {{ item.occurrence.lng }} )</ion-note>
       </ion-card-content>
 
       <ion-card-content>
-        <ion-note slot="start" *ngIf="item.location.send">Você já enviou esta ocorrência</ion-note>
+        <ion-note slot="start" *ngIf="item.occurrence.send">Você já enviou esta ocorrência</ion-note>
       </ion-card-content>
       <ion-card-content>
-        <ion-progress-bar type="indeterminate" *ngIf="item.location.sending"></ion-progress-bar>
+        <ion-progress-bar type="indeterminate" *ngIf="item.occurrence.sending"></ion-progress-bar>
       </ion-card-content>
     </ion-card>
   </ion-list>

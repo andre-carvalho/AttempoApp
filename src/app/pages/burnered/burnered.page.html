@@ -1,7 +1,11 @@
 <ion-header>
 
   <ion-toolbar>
-    <ion-title>Relatar ocorrência</ion-title>
+    <ion-icon slot="start" name="person"></ion-icon>
+    <ion-title><ion-label color="medium" *ngIf="user">{{ user.email }}</ion-label></ion-title>
+    <ion-button fill="clear" slot="end" (click)="logout()">
+      <ion-icon name="log-out"></ion-icon>&nbsp;Sair
+    </ion-button>
   </ion-toolbar>
 
 </ion-header>
@@ -51,13 +55,13 @@
             <ion-button fill="clear" expand="block" (click)="goToMap()">
               <ion-icon name="pin"></ion-icon>
             </ion-button>
-            Ajustar local
+            Mapa
           </ion-col>
           <ion-col size="4" class="buttontext">
-            <ion-button fill="clear" expand="block" (click)="goToLocations()">
+            <ion-button fill="clear" expand="block" (click)="goToOccurrences()">
               <ion-icon name="list-box"></ion-icon>
             </ion-button>
-            Minha lista
+            Ocorrências
           </ion-col>
         </ion-row>
       </ion-grid>

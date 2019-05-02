@@ -6,7 +6,7 @@ const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'home', loadChildren: './home/home.module#HomePageModule' },
   { path: 'burnered', loadChildren: './pages/burnered/burnered.module#BurneredPageModule', canActivate: [JwtTokenAuthGuardProvider] },
-  { path: 'locations', loadChildren: './pages/locations/locations.module#LocationsPageModule', canActivate: [JwtTokenAuthGuardProvider] },
+  { path: 'occurrences', loadChildren: './pages/occurrences/occurrences.module#OccurrencesPageModule', canActivate: [JwtTokenAuthGuardProvider] },
   { path: 'map', loadChildren: './pages/map/map.module#MapPageModule', canActivate: [JwtTokenAuthGuardProvider] },
 ];
 

@@ -5,6 +5,7 @@ import { JwtHelperService } from '@auth0/angular-jwt';
 import { Storage } from '@ionic/storage';
 import { tap, catchError, map } from 'rxjs/operators';
 import { BehaviorSubject, throwError, Observable } from 'rxjs';
+import { Data } from '@angular/router';
 
 // The name used as key the token into localstarage
 const TOKEN_KEY = 'access_token';
@@ -118,6 +119,7 @@ export class JwtTokenAuthProvider {
  
   /**
    * Asks for server if token still valid.
+   * if true then return User
    */
   async isAuthorized() {
     const token = await this.getToken();
@@ -126,13 +128,22 @@ export class JwtTokenAuthProvider {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       });
-      return this.http.get(`${this.url}/isAuthorized`, { headers: options }).pipe(map(data => {
-        if (data === null)
-          return throwError("null data");
-        return data;
-      }), catchError(e => {
-        throw throwError(e);
-      }));
+      return this.http.get(`${this.url}/isAuthorized`, { headers: options })
+        .pipe(map(
+          (response:any) => {
+            if (response.status==='success') {
+              let jsonUser = response.data;
+              let user = new User();
+              user.email=jsonUser.email;
+              user.admin=jsonUser.admin;
+              user.id=jsonUser.user_id;
+              user.registered_at=jsonUser.registered_at;
+              return user;
+            }
+          }), catchError(e => {
+            throw throwError(e);
+          })
+        );
     }else {
       // if don't have token, change authentication control to false.
       this.authenticationState.next(false);
@@ -154,8 +165,9 @@ export class JwtTokenAuthProvider {
     return this.authenticationState.value;
   }
 
-  getUser() {
-    return this.user;
+  getUserID():number {
+    // sub in JWT is user as ID
+    return this.user.sub;
   }
 
   async getToken() {
@@ -170,4 +182,11 @@ export class JwtTokenAuthProvider {
       return rejected;
     });
   }
+}
+
+export class User {
+  id:number;
+  email:string;
+  admin:boolean;
+  registered_at:Data;
 }

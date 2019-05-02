@@ -1,5 +1,7 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
+import { JwtTokenAuthProvider, User } from 'src/app/services/jwt-token-auth/jwt-token-auth';
+import { SynchronizeService } from 'src/app/services/occurrences/synchronize.service';
 
 @Component({
   selector: 'app-burnered',
@@ -9,11 +11,35 @@ import { Router } from '@angular/router';
 })
 export class BurneredPage implements OnInit {
 
+  private user:User;
+
   constructor(
-    private router: Router) {
+    private router: Router,
+    private authService: JwtTokenAuthProvider,
+    private syncService: SynchronizeService) {
   }
 
   ngOnInit() {
+    this.authService.isAuthorized().then(
+      (userObserve) => {
+        userObserve.subscribe((user:User)=>{
+          this.user=user;
+        });
+      }, (err) => {
+        console.log('Fail on get user');
+      }
+    ).catch( (err) => {
+      console.log('Fail on get user');
+    });
+
+    // start websocket to load points that other users sent to server.
+    if(!this.syncService.isConnected()) {
+      this.syncService.initSocket();
+    }
+  }
+
+  logout() {
+    this.authService.logout();
   }
 
   goToMap() {
@@ -21,11 +47,11 @@ export class BurneredPage implements OnInit {
   }
   
   goToCamera() {
-    this.router.navigate(['/locations'], {queryParams:{startCamera:true}});
+    this.router.navigate(['/occurrences'], {queryParams:{startCamera:true}});
   }
 
-  goToLocations() {
-    this.router.navigate(['/locations'], {queryParams:{
+  goToOccurrences() {
+    this.router.navigate(['/occurrences'], {queryParams:{
       currentLat: 0,
       currentLng: 0,
       startCamera: false

@@ -2,21 +2,23 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AlertController, ToastController, MenuController } from '@ionic/angular';
 import { Camera, CameraOptions } from '@ionic-native/camera/ngx';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
-import { LocationsProvider, Location, LocationItem } from '../../services/locations/locations';
+import { OccurrencesProvider } from '../../services/occurrences/occurrences';
+import { Occurrence, OccurrenceItem } from '../../entities/occurrence';
 import { DataService } from '../../services/routing-data/data.service';
 import { JwtTokenAuthProvider } from '../../services/jwt-token-auth/jwt-token-auth';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
+import { SynchronizeService } from 'src/app/services/occurrences/synchronize.service';
 
 @Component({
-  selector: 'app-locations',
-  templateUrl: './locations.page.html',
-  styleUrls: ['./locations.page.scss'],
+  selector: 'app-occurrences',
+  templateUrl: './occurrences.page.html',
+  styleUrls: ['./occurrences.page.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class LocationsPage implements OnInit {
+export class OccurrencesPage implements OnInit {
 
-  locations: LocationItem[];
-  model: Location;
+  occurrences: OccurrenceItem[];
+  model: Occurrence;
   key: string;
   syncURL: string;
   public currentLat: any;
@@ -33,21 +35,22 @@ export class LocationsPage implements OnInit {
     correctOrientation: true // Camera orientation  
   };
 
-  constructor(private locationsProvider: LocationsProvider,
+  constructor(private occurrencesProvider: OccurrencesProvider,
     private camera: Camera, public geolocation: Geolocation,
     private toastController: ToastController, private alertCtrl: AlertController,
     private authService: JwtTokenAuthProvider,
     private router: Router,
     private routingData: DataService,
-    private menu: MenuController) {
+    private menu: MenuController,
+    private syncService: SynchronizeService) {
   }
 
   ngOnInit() {
-    this.syncURL='http://'+this.locationsProvider.getServerURL();
+    this.syncURL='http://'+this.occurrencesProvider.getServerURL();
   }
 
   ionViewWillEnter() {
-    console.log('call LocationsPage ionViewWillEnter');
+    console.log('call OccurrencesPage ionViewWillEnter');
 
     let mapCoord = this.routingData.getData('map_coord');
     this.currentLat = (mapCoord)?(+mapCoord.lat):(0);
@@ -56,9 +59,9 @@ export class LocationsPage implements OnInit {
     // get tag control from routing data service
     let partialModel = this.routingData.getData('partial_model');
     if(partialModel) {
-      this.restorePartialLocation();
+      this.restorePartialOccurrence();
     }else{
-      this.createNewLocation();
+      this.createNewOccurrence();
     }
 
     this.startCamera = this.routingData.getData('start_camera');
@@ -66,8 +69,8 @@ export class LocationsPage implements OnInit {
       this.takePicture(0);
     }
 
-    // to populate the locations.page view with cards of stored locations
-    this.reloadLocations();
+    // to populate the occurrences.page view with cards of stored occurrences
+    this.reloadOccurrences();
   }
 
   openConfig() {
@@ -99,36 +102,35 @@ export class LocationsPage implements OnInit {
   }
 
   storeSyncURL(){
-    this.locationsProvider.setServerURL(this.syncURL);
+    this.occurrencesProvider.setServerURL(this.syncURL);
   }
 
-  reloadLocations() {
-    if(this.locationsProvider) {
-      this.locationsProvider.getAll()
+  reloadOccurrences() {
+    if(this.occurrencesProvider) {
+      this.occurrencesProvider.getAll()
         .then((result) => {
-          this.locations = result;
-          this.locations.reverse();
+          this.occurrences = result;
+          this.occurrences.reverse();
         });
     }
   }
 
-  createNewLocation() {
+  createNewOccurrence() {
     if(!this.model) {
-      this.model = new Location();
-      let user=this.authService.getUser();
-      this.model.userid=user.sub;// sub in JWT is user as ID
+      this.model = new Occurrence();
+      this.model.userid=this.authService.getUserID();
       this.setCoordsInModel();
       // set a default picture to fill the photo position
       this.model.photoURI="assets/imgs/default_picture.jpeg";
     }
   }
 
-  removeLocation(item: LocationItem) {
-    this.locationsProvider.remove(item.key)
+  removeOccurrence(item: OccurrenceItem) {
+    this.occurrencesProvider.remove(item.key)
       .then(() => {
         // removing from array of itens
-        var index = this.locations.indexOf(item);
-        this.locations.splice(index, 1);
+        var index = this.occurrences.indexOf(item);
+        this.occurrences.splice(index, 1);
         this.presentToast('Ocorrência removida.');
       })
   }
@@ -138,7 +140,7 @@ export class LocationsPage implements OnInit {
     this.menu.open('newCardTools');
   }
 
-  openEachCardTools(l:LocationItem) {
+  openEachCardTools(l:OccurrenceItem) {
     this.menu.enable(true, l.key);
     this.menu.open(l.key);
   }
@@ -168,10 +170,10 @@ export class LocationsPage implements OnInit {
   goToMap() {
     this.menu.close('newCardTools');
     // Store the partial data for current template to use when user return from map
-    this.savePartialLocation();
+    this.savePartialOccurrence();
   }
 
-  catchLocation() {
+  catchOccurrence() {
     let locationOptions = {timeout: 10000, enableHighAccuracy: true};
 
     this.geolocation.getCurrentPosition(locationOptions).then((position) => {
@@ -186,25 +188,25 @@ export class LocationsPage implements OnInit {
   }
 
   public save() {
-    this.saveLocation()
+    this.saveOccurrence()
       .then(() => {
         this.presentToast('Ocorrência gravada.');
         this.model=undefined;
-        this.createNewLocation();
-        this.reloadLocations();
+        this.createNewOccurrence();
+        this.reloadOccurrences();
       })
       .catch(() => {
         this.presentToast('Erro ao gravar a ocorrência.');
       });
   }
 
-  private saveLocation() {
+  private saveOccurrence() {
     this.menu.close('newCardTools');
-    return this.locationsProvider.insert(this.model);
+    return this.occurrencesProvider.insert(this.model);
   }
 
-  private savePartialLocation() {
-    this.locationsProvider.savePartial("partial", this.model)
+  private savePartialOccurrence() {
+    this.occurrencesProvider.savePartial("partial", this.model)
     .then(() => {
       // set tag control into routing data service
       this.routingData.setData('partial_model',true);
@@ -219,12 +221,12 @@ export class LocationsPage implements OnInit {
     });
   }
 
-  private restorePartialLocation() {
-    this.locationsProvider.getPartial("partial")
+  private restorePartialOccurrence() {
+    this.occurrencesProvider.getPartial("partial")
     .then((model) => {
       this.model=model;
       this.setCoordsInModel();
-      this.locationsProvider.remove("partial");
+      this.occurrencesProvider.remove("partial");
       // set tag control into routing data service
       this.routingData.setData('partial_model',false);
     })
@@ -235,56 +237,56 @@ export class LocationsPage implements OnInit {
 
   private setCoordsInModel() {
     if(!this.currentLat || !this.currentLng) {
-      this.catchLocation();
+      this.catchOccurrence();
     }else{
       this.model.lat = (+(+this.currentLat).toFixed(6));
       this.model.lng = (+(+this.currentLng).toFixed(6));
     }
   }
 
-  public sendDataToServer(item: LocationItem) {
+  public sendDataToServer(item: OccurrenceItem) {
 
     this.menu.close(item.key);
     
     if(item == undefined) {
-      let l = this.locations.length;
+      let l = this.occurrences.length;
       for (let i=0;i<l;i++) {
-        if(!this.locations[i].location.send) {
-          this.sendToServer(this.locations[i].location, this.locations[i].key);
+        if(!this.occurrences[i].occurrence.send) {
+          this.sendToServer(this.occurrences[i].occurrence, this.occurrences[i].key);
         }
       }
     }else{
-      this.sendToServer(item.location, item.key);
+      this.sendToServer(item.occurrence, item.key);
     }
     
   }
 
-  private sendToServer(location: Location, key: string) {
-    location.sending=true;
-    if(location.photo && location.photo.startsWith('file')) {
+  private sendToServer(occurrence: Occurrence, key: string) {
+    occurrence.sending=true;
+    if(occurrence.photo && occurrence.photo.startsWith('file')) {
       try {
-        this.uploadData(location, key);
+        this.uploadData(occurrence, key);
       }
       catch (err) {
-        location.sending=false;
+        occurrence.sending=false;
         this.presentToast('Tentativa de envio falhou.');
         console.log(err);
       }
     }else{
-      location.sending=false;
+      occurrence.sending=false;
       this.showAlert('Ocorrências sem foto não podem ser enviadas ao servidor', 'Atenção');
     }
   }
   
-  private uploadData(location: Location, key: string) {
-    window['resolveLocalFileSystemURL'](location.photo,
+  private uploadData(occurrence: Occurrence, key: string) {
+    window['resolveLocalFileSystemURL'](occurrence.photo,
       entry => {
-        entry['file']( (file:any) => this.readFile(file,location,key));
+        entry['file']( (file:any) => this.readFile(file,occurrence,key));
       });
   }
 
-  private cloneLocation(ll:Location){
-    let l:Location=new Location();
+  private cloneOccurrence(ll:Occurrence){
+    let l:Occurrence=new Occurrence();
     l.lat=ll.lat;
     l.lng=ll.lng;
     l.description=ll.description;
@@ -293,47 +295,52 @@ export class LocationsPage implements OnInit {
     return l;
   }
   
-  private prepareLocation(location: Location): string {
-    let l = this.cloneLocation(location);
+  private prepareOccurrence(occurrence: Occurrence): string {
+    let l = this.cloneOccurrence(occurrence);
     return JSON.stringify(l);
   }
 
-  private readFile(file: any, location:Location, key: string) {
+  private readFile(file: any, occurrence:Occurrence, key: string) {
     const reader = new FileReader();
-    // prepare location Object to send to server
-    const jsonLocation:string = this.prepareLocation(location);
+    // prepare occurrence Object to send to server
+    const jsonOccurrence:string = this.prepareOccurrence(occurrence);
     reader.onloadend = () => {
       const formData = new FormData();
       const imgBlob = new Blob([reader.result], {type: file.type});
       formData.append('file', imgBlob, file.name);
-      formData.append('json_data', jsonLocation);
-      this.locationsProvider.postData(formData)
+      formData.append('json_data', jsonOccurrence);
+      this.occurrencesProvider.postData(formData)
       .then((data) => {
         data.subscribe((response)=>{
-          this.uploadSuccess(response, location, key);
+          this.uploadSuccess(response, occurrence, key);
         },(err)=>{
-          this.uploadError(err, location);
+          this.uploadError(err, occurrence);
         });
       }, (err) => {
-        this.uploadError(err, location);
+        this.uploadError(err, occurrence);
       });
     };
     reader.readAsArrayBuffer(file);
   }
 
-  private uploadSuccess(response:any, location:Location, key: string) {
+  private uploadSuccess(response:any, occurrence:Occurrence, key: string) {
     console.log(response);
     if(response.status=='completed') {
-      location.sending=false;
-      location.send=true;
-      this.locationsProvider.update(key, location);
+      occurrence.sending=false;
+      occurrence.send=true;
+      this.occurrencesProvider.update(key, occurrence);
       this.presentToast('Upload com sucesso.');
+      let occurrenceItem = new OccurrenceItem();
+      occurrenceItem.key=key;
+      occurrenceItem.occurrence=occurrence;
+      // send via broadcast to other users.
+      this.syncService.sendNewOccurrence(occurrenceItem);
     }
   }
 
-  private uploadError(error:any, location:Location) {
-    location.sending=false;
-    location.send=false;
+  private uploadError(error:any, occurrence:Occurrence) {
+    occurrence.sending=false;
+    occurrence.send=false;
     console.log(error);
     this.presentToast('Erro ao enviar dados.');
   }

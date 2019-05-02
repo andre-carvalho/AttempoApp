@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MenuController } from '@ionic/angular';
-import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
-import { LocationsProvider, LocationItem } from '../../services/locations/locations';
+import { OccurrencesProvider } from '../../services/occurrences/occurrences';
+import { OccurrenceItem, OccurrenceItemSerializable } from '../../entities/occurrence';
 import { environment } from '../../../environments/environment';
 import { DataService } from '../../services/routing-data/data.service';
+import { SynchronizeService } from '../../services/occurrences/synchronize.service';
 
 declare var google: any;
 
@@ -19,13 +20,13 @@ declare var google: any;
 export class MapPage implements OnInit, OnDestroy {
 
   @ViewChild('map_canvas') map_canvas:any;
-  locations: LocationItem[];
+  occurrences: OccurrenceItem[];
   map: any;
   markers: any;
   watchLocation: any;
   currentLocation: any;
   currentCoords: any;
-  savedLocations: any;
+  myMarkersFromSavedOccurrences: any;
   private locationOptions: any;
   // The Google API key is loaded from google-key.js file.
   private apiKey: any = environment.googleMapApiKey;
@@ -35,16 +36,16 @@ export class MapPage implements OnInit, OnDestroy {
   private gpsState: boolean = false;
   private eventsByOthers: boolean = false;
   private eventsByMe: boolean = false;
+  occurrencesByOthers: OccurrenceItem[]=[];
+  markersFromRemoteOccurrences: any;
   
   constructor(private alertCtrl: AlertController,
-    private locationsProvider: LocationsProvider,
-    private location: Location,
+    private occurrencesProvider: OccurrencesProvider,
     private router: Router,
     public geolocation: Geolocation,
     private routingData: DataService,
+    private syncService: SynchronizeService,
     private menu: MenuController) {
-
-    console.log('call MapPage constructor');
     
     /*load google map script dynamically if not loaded yet */
     if(!document.getElementById('googleMap')) {
@@ -67,8 +68,6 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   ngOnInit():void {
-
-    console.log('call MapPage onInit');
 
     if(document.getElementById('googleMap')) {
       let scripts = document.getElementsByTagName('script');
@@ -97,19 +96,16 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter() {
-    console.log('call MapPage ionViewWillEnter');
     // get tag control from routing data service
     this.partialModel = this.routingData.getData('partial_model');
     if(this.eventsByMe){
-      this.reloadLocations();
+      this.reloadOccurrences();
     }else{
-      // remove from map all locations stored by me
+      // remove all markers from map that represents my occurrences.
       this.clearSavedMarkers();
     }
-    if(this.eventsByOthers){
-      // TODO: needs of service that provide locations from other people
-      console.log('no implemented yet');
-    }
+    // update behaviour of receive occurrences by sync service.
+    this.toggleByOthers();
   }
 
   /* Initialize the map only when Google Maps API Script was loaded */
@@ -124,16 +120,12 @@ export class MapPage implements OnInit, OnDestroy {
     this.menu.open('mapConfig');
   }
 
-  goBack() {
-    this.location.back();
-  }
-
   useCurrentCoords() {
     this.routingData.setData('map_coord',this.currentCoords);
     this.routingData.setData('start_camera',false);
     this.routingData.setData('partial_model',this.partialModel);
 
-    this.router.navigate(['locations']);
+    this.router.navigate(['occurrences']);
   }
 
   setCurrentCoords(lat:number, lng:number) {
@@ -142,7 +134,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   /*
-  * This function will create and show a marker representing your location
+  * This function will create and show a marker representing your occurrence
   */
   showMyLocation(position){
   
@@ -214,7 +206,7 @@ export class MapPage implements OnInit, OnDestroy {
       streetViewControl: false
     }
 
-    /* Show demo location */
+    /* Show demo occurrence */
     this.map = new google.maps.Map(this.map_canvas.nativeElement, options);
     return true;
   }
@@ -302,16 +294,47 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Change behaviour for load occurrences by local storage.
+   */
   toggleByMe(){
     if(this.eventsByMe){
-      this.reloadLocations();
+      this.reloadOccurrences();
     }else{
       this.clearSavedMarkers();
     }
   }
 
+  /**
+   * Change behaviour for receive occurrences by sync service.
+   */
   toggleByOthers(){
-    console.log('toggle by other');
+    if(this.eventsByOthers){
+      this.tryReceiveOccurrences();
+    }else{
+      this.clearMarkersByOthers();
+    }
+  }
+
+  tryReceiveOccurrences() {
+    if(this.syncService.isConnected()) {
+      this.syncService.onNewOccurrence().subscribe( (jsonOccurrenceItem:string) => {
+        // receive new occurrences to display into map
+        let occurrenceItem = OccurrenceItemSerializable.unserialize(jsonOccurrenceItem);
+        this.occurrencesByOthers.push(occurrenceItem);
+        this.clearMarkersByOthers();
+        this.displayOtherMarkers(this.occurrencesByOthers);
+      });
+    }
+  }
+
+  clearMarkersByOthers(){
+    if(!this.markersFromRemoteOccurrences) return;
+    while(this.markersFromRemoteOccurrences.length) {
+      let m = this.markersFromRemoteOccurrences.pop();
+      if(m != undefined)
+        m.setMap(null);
+    }
   }
 
   removeLastLocation() {
@@ -326,26 +349,36 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
-  reloadLocations() {
-    this.locationsProvider.getAll()
+  reloadOccurrences() {
+    this.occurrencesProvider.getAll()
       .then((result) => {
-        this.locations = result;
-        this.displaySavedMarkers(this.locations);
+        this.occurrences = result;
+        this.displaySavedMarkers(this.occurrences);
       });
   }
 
   clearSavedMarkers() {
-    if(!this.savedLocations) return;
-    while(this.savedLocations.length) {
-      let m = this.savedLocations.pop();
+    if(!this.myMarkersFromSavedOccurrences) return;
+    while(this.myMarkersFromSavedOccurrences.length) {
+      let m = this.myMarkersFromSavedOccurrences.pop();
       if(m != undefined)
         m.setMap(null);
     }
   }
 
-  displaySavedMarkers(locations: LocationItem[]) {
-    this.savedLocations = [];
-    let color = {local:"FE7569",remote:"5cf5e0"};
+  displayOtherMarkers(occurrences: OccurrenceItem[]) {
+    this.markersFromRemoteOccurrences = [];
+    let colors = {local:"0000FF",remote:"0000FF"};
+    this.displayMarkers(occurrences, colors, this.markersFromRemoteOccurrences);
+  }
+
+  displaySavedMarkers(occurrences: OccurrenceItem[]) {
+    this.myMarkersFromSavedOccurrences = [];
+    let colors = {local:"FE7569",remote:"5cf5e0"};
+    this.displayMarkers(occurrences, colors,this.myMarkersFromSavedOccurrences);
+  }
+
+  displayMarkers(occurrences: OccurrenceItem[], colors:any, markers:any) {
     /**
      * Make a new marker image.
      * @param color pin color
@@ -358,21 +391,21 @@ export class MapPage implements OnInit, OnDestroy {
       new google.maps.Point(10, 34)
     )};
 
-    for (const key in locations) {
-      if (locations.hasOwnProperty(key)) {
-        const item = locations[key];
-        if (item.location != undefined) {
-          let newPosition = new google.maps.LatLng(item.location.lat, item.location.lng);
+    for (const key in occurrences) {
+      if (occurrences.hasOwnProperty(key)) {
+        const item = occurrences[key];
+        if (item.occurrence != undefined) {
+          let newPosition = new google.maps.LatLng(item.occurrence.lat, item.occurrence.lng);
 
-          let char=(item.location.send)?('R'):('L'),
-          icon=((item.location.send)?(gImg(color.remote,(char))):(gImg(color.local,(char))));
+          let char=(item.occurrence.send)?('R'):('L'),
+          icon=((item.occurrence.send)?(gImg(colors.remote,(char))):(gImg(colors.local,(char))));
 
-          this.savedLocations.push(new google.maps.Marker({
+          markers.push(new google.maps.Marker({
               map: this.map,
               position: newPosition,
-              title: item.location.description,
+              title: item.occurrence.description,
               icon: icon,
-              location: item.location
+              occurrence: item.occurrence
             })
           );
         }
@@ -380,7 +413,7 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     // Attach balloon on each marker
-    this.attachBalloon(this.savedLocations);
+    this.attachBalloon(markers);
   }
 
   private attachBalloon(markers:any): any {
@@ -396,20 +429,20 @@ export class MapPage implements OnInit, OnDestroy {
         let lng = marker.getPosition().lng();
         let timeref = '-';
         let description = '-';
-        let locationSend = 'status desconhecido';
-        if(marker.location){
-          timeref = (marker.location.timeref)?(marker.location.timeref.toLocaleDateString()):('não informada');
-          description = (marker.location.description)?(marker.location.description):('não definida');
-          locationSend = (marker.location.send)?('sim'):('não');
+        let occurrenceSend = 'status desconhecido';
+        if(marker.occurrence){
+          timeref = (marker.occurrence.timeref)?(new Date(marker.occurrence.timeref).toLocaleDateString()):('não informada');
+          description = (marker.occurrence.description)?(marker.occurrence.description):('não definida');
+          occurrenceSend = (marker.occurrence.send)?('sim'):('não');
         }
         
 
         let thead = 
         '<tr class="mk-thead"><td colspan="2">'+
-        'Salvo no servidor? '+locationSend+
+        'Salvo no servidor? '+occurrenceSend+
         '</td></tr>';
         let tbody = 
-        ((marker.location)?(
+        ((marker.occurrence)?(
           '<tr><td>Descrição:</td><td>'+description+'</td></tr>'+
           '<tr><td>Data:</td><td>'+timeref+'</td></tr>'
         ):(''))+
